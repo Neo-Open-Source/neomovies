@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 0, 0, 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 237, 237, 237;
+    --background-start-rgb: 14, 14, 14;
+    --background-end-rgb: 14, 14, 14;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+  min-height: 100vh;
+  font-family: 'Inter', Arial, sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Стили для Dark Reader */
+[data-darkreader-mode] #__next,
+[data-darkreader-mode] body,
+[data-darkreader-mode] html {
+  background: rgb(14, 14, 14) !important;
+}
+
+/* Скрываем индикаторы Next.js */
+#nextjs-portal {
+  display: none;
+}
+
+[data-nextjs-toast-wrapper] {
+  display: none !important;
+}
