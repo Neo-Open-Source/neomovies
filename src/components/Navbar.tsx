@@ -216,12 +216,17 @@ const AuthButtons = styled.div`
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const pathname = usePathname();
   const router = useRouter();
 
   // Скрываем навбар на определенных страницах
   if (pathname === '/login' || pathname === '/404' || pathname.startsWith('/verify')) {
+    return null;
+  }
+
+  // Если сессия загружается, показываем плейсхолдер
+  if (status === 'loading') {
     return null;
   }
 

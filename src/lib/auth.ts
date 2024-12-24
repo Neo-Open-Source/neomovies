@@ -88,4 +88,3 @@ declare module 'next-auth/jwt' {
     isAdmin: boolean;
   }
 }
-

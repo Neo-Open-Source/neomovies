@@ -12,6 +12,7 @@ declare module 'next-auth' {
       email: string;
       verified: boolean;
       isAdmin: boolean;
+      adminVerified?: boolean;
     } & DefaultSession['user']
   }
 }
@@ -23,7 +24,7 @@ const handler = NextAuth({
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
-        isAdminVerified: { label: 'isAdminVerified', type: 'checkbox' }
+        isAdminLogin: { label: 'isAdminLogin', type: 'boolean' }
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -48,9 +49,12 @@ const handler = NextAuth({
           throw new Error('EMAIL_NOT_VERIFIED');
         }
 
-        // Проверяем права администратора и флаг верификации для админ-панели
-        if (user.isAdmin && !credentials.isAdminVerified) {
-          throw new Error('ADMIN_NOT_VERIFIED');
+        // Если это попытка входа в админ-панель
+        if (credentials.isAdminLogin === 'true') {
+          // Проверяем, является ли пользователь админом
+          if (!user.isAdmin) {
+            throw new Error('NOT_AN_ADMIN');
+          }
         }
 
         return {
@@ -58,7 +62,8 @@ const handler = NextAuth({
           email: user.email,
           name: user.name,
           verified: user.verified,
-          isAdmin: user.isAdmin
+          isAdmin: user.isAdmin,
+          adminVerified: credentials.isAdminLogin === 'true'
         };
       }
     })
@@ -73,6 +78,7 @@ const handler = NextAuth({
         token.id = user.id;
         token.verified = user.verified;
         token.isAdmin = user.isAdmin;
+        token.adminVerified = user.adminVerified;
       }
       return token;
     },
@@ -81,6 +87,7 @@ const handler = NextAuth({
         session.user.id = token.id as string;
         session.user.verified = token.verified as boolean;
         session.user.isAdmin = token.isAdmin as boolean;
+        session.user.adminVerified = token.adminVerified as boolean;
       }
       return session;
     }

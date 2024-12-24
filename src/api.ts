@@ -1,12 +1,15 @@
 import axios from 'axios';
 
 const BASE_URL = 'https://api.themoviedb.org/3';
-const AUTH_TOKEN = 'Bearer process.env.TMDB_API_KEY';
+
+if (typeof window === 'undefined' && !process.env.NEXT_PUBLIC_TMDB_ACCESS_TOKEN) {
+  throw new Error('TMDB_ACCESS_TOKEN is not defined in environment variables');
+}
 
 export const api = axios.create({
     baseURL: BASE_URL,
     headers: {
-        'Authorization': AUTH_TOKEN,
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_TMDB_ACCESS_TOKEN}`,
         'Content-Type': 'application/json'
     }
 });
