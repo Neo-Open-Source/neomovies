@@ -210,7 +210,7 @@ export default function MoviePlayer({ id, title, poster, imdbId }: MoviePlayerPr
       <PlayerContainer>
         {settings.defaultPlayer === 'lumex' && imdbId ? (
           <StyledIframe
-            src={`${process.env.NEXT_PUBLIC_LUMEX_URL}?imdb_id=${imdbId}`}
+            src={`https://p.lumex.site/k1GbtOF2cX6p?&imdb_id=${imdbId}`}
             allow="fullscreen"
             loading="lazy"
           />

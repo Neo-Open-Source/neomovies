@@ -87,7 +87,7 @@ const Rating = styled.div`
   right: 8px;
   padding: 4px 8px;
   border-radius: 6px;
-  font-size: 17px;
+  font-size: 12px;
   font-weight: 600;
   color: white;
 `;

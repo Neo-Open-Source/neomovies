@@ -64,6 +64,7 @@ export const authOptions: AuthOptions = {
   },
   session: {
     strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 дней
   },
 };
 
@@ -87,3 +88,4 @@ declare module 'next-auth/jwt' {
     isAdmin: boolean;
   }
 }
+
