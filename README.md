@@ -43,7 +43,7 @@ Neo Movies - это современная веб-платформа для пр
 
 1. **Клонируйте репозиторий:**
    ```bash
-   git clone https://gitlab.com/fenixoffc1/neomovies.git
+   git clone https://gitlab.com/foxixus/neomovies.git
    cd neomovies
    ```
 
