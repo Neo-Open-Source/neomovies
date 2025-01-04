@@ -131,7 +131,7 @@ neo-movies-web/
 
 ## 👥 Авторы
 
-- **Frontend Developer** - [Foxix](https://gitlab.com/fenixoffc1)
+- **Frontend Developer** - [Foxix](https://gitlab.com/foxixus)
 
 ## 📄 Лицензия
 
