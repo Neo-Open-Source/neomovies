@@ -21,6 +21,12 @@ const nextConfig = {
         hostname: 'image.tmdb.org',
         pathname: '/**',
       },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3010',
+        pathname: '/images/**',
+      }
     ],
   },
   onDemandEntries: {

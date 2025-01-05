@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { debounce } from 'lodash';
+import { getImageUrl } from '@/lib/neoApi';
 
 interface Movie {
   id: number;
@@ -12,6 +13,82 @@ interface Movie {
   poster_path: string | null;
   genre_ids: number[];
 }
+
+interface MovieCardProps {
+  children: React.ReactNode;
+}
+
+const MovieCard: React.FC<MovieCardProps> = ({ children }) => {
+  return (
+    <div className="bg-gray-800 rounded-lg overflow-hidden">
+      {children}
+    </div>
+  );
+};
+
+interface PosterContainerProps {
+  children: React.ReactNode;
+}
+
+const PosterContainer: React.FC<PosterContainerProps> = ({ children }) => {
+  return (
+    <div className="aspect-w-2 aspect-h-3">
+      {children}
+    </div>
+  );
+};
+
+interface ImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+}
+
+const Image: React.FC<ImageProps> = ({ src, alt, width, height, ...props }) => {
+  return (
+    <img
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      className="object-cover w-full h-full"
+      {...props}
+    />
+  );
+};
+
+interface MovieInfoProps {
+  children: React.ReactNode;
+}
+
+const MovieInfo: React.FC<MovieInfoProps> = ({ children }) => {
+  return (
+    <div className="p-4">
+      {children}
+    </div>
+  );
+};
+
+interface TitleProps {
+  children: React.ReactNode;
+}
+
+const Title: React.FC<TitleProps> = ({ children }) => {
+  return (
+    <h3 className="font-semibold text-lg mb-2">{children}</h3>
+  );
+};
+
+interface YearProps {
+  children: React.ReactNode;
+}
+
+const Year: React.FC<YearProps> = ({ children }) => {
+  return (
+    <p className="text-sm text-gray-400 mb-4">{children}</p>
+  );
+};
 
 export default function MovieSearch() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,31 +141,26 @@ export default function MovieSearch() {
       {searchResults.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {searchResults.map((movie) => (
-            <div
-              key={movie.id}
-              className="bg-gray-800 rounded-lg overflow-hidden"
-            >
-              <div className="aspect-w-2 aspect-h-3">
-                <img
-                  src={
-                    movie.poster_path
-                      ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
-                      : '/placeholder.jpg'
-                  }
+            <MovieCard key={movie.id}>
+              <PosterContainer>
+                <Image
+                  src={movie.poster_path ? getImageUrl(movie.poster_path) : '/placeholder.jpg'}
                   alt={movie.title}
-                  className="object-cover w-full h-full"
+                  width={200}
+                  height={300}
                 />
-              </div>
-              <div className="p-4">
-                <h3 className="font-semibold text-lg mb-2">{movie.title}</h3>
+              </PosterContainer>
+              <MovieInfo>
+                <Title>{movie.title}</Title>
+                <Year>{new Date(movie.release_date).getFullYear()}</Year>
                 <p className="text-sm text-gray-400 mb-4">
-                  {new Date(movie.release_date).getFullYear()} • {movie.vote_average.toFixed(1)} ⭐
+                  {movie.vote_average.toFixed(1)} ⭐
                 </p>
                 <p className="text-sm text-gray-400 line-clamp-3 mb-4">
                   {movie.overview}
                 </p>
-              </div>
-            </div>
+              </MovieInfo>
+            </MovieCard>
           ))}
         </div>
       )}

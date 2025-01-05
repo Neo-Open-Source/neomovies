@@ -1,5 +1,5 @@
 import TVShowPage from './TVShowPage';
-import { tvAPI } from '@/lib/api';
+import { tvShowsAPI } from '@/lib/neoApi';
 
 interface PageProps {
   params: {
@@ -10,8 +10,8 @@ interface PageProps {
 
 async function getData(id: string) {
   try {
-    const response = await tvAPI.getShow(id);
-    return { id, show: response.data };
+    const response = await tvShowsAPI.getTVShow(id).then(res => res.data);
+    return { id, show: response };
   } catch (error) {
     console.error('Error fetching show:', error);
     return { id, show: null };

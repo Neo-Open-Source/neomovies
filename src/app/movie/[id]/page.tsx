@@ -1,5 +1,6 @@
-import MoviePage from './MoviePage';
+import { Metadata } from 'next';
 import { moviesAPI } from '@/lib/api';
+import MoviePage from '@/app/movie/[id]/MoviePage';
 
 interface PageProps {
   params: {
@@ -7,17 +8,34 @@ interface PageProps {
   };
 }
 
+// Генерация метаданных для страницы
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = params;
+  try {
+    const { data: movie } = await moviesAPI.getMovie(id);
+    return {
+      title: `${movie.title} - NeoMovies`,
+      description: movie.overview,
+    };
+  } catch (error) {
+    return {
+      title: 'Фильм - NeoMovies',
+    };
+  }
+}
+
+// Получение данных для страницы
 async function getData(id: string) {
   try {
-    const response = await moviesAPI.getMovie(id);
-    return { id, movie: response.data };
+    const { data: movie } = await moviesAPI.getMovie(id);
+    return { id, movie };
   } catch (error) {
-    console.error('Error fetching movie:', error);
-    return { id, movie: null };
+    throw new Error('Failed to fetch movie');
   }
 }
 
 export default async function Page({ params }: PageProps) {
-  const data = await getData(params.id);
+  const { id } = params;
+  const data = await getData(id);
   return <MoviePage movieId={data.id} movie={data.movie} />;
 }

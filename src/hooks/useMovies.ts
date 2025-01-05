@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { moviesAPI } from '@/lib/api';
-import type { Movie } from '@/lib/api';
+import { moviesAPI } from '@/lib/neoApi';
+import type { Movie } from '@/lib/neoApi';
 
 export function useMovies(initialPage = 1) {
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -12,61 +12,66 @@ export function useMovies(initialPage = 1) {
   const [page, setPage] = useState(initialPage);
   const [totalPages, setTotalPages] = useState(0);
 
-  const filterMovies = useCallback((movies: Movie[]) => {
-    return movies.filter(movie => {
-      if (movie.vote_average === 0) return false;
-      const hasRussianLetters = /[а-яА-ЯёЁ]/.test(movie.title);
-      if (!hasRussianLetters) return false;
-      if (/^\d+$/.test(movie.title)) return false;
-      const releaseDate = new Date(movie.release_date);
-      const now = new Date();
-      if (releaseDate > now) return false;
-      return true;
-    });
-  }, []);
-
+  // Получаем featured фильм всегда с первой страницы
   const fetchFeaturedMovie = useCallback(async () => {
     try {
       const response = await moviesAPI.getPopular(1);
-      const filteredMovies = filterMovies(response.data.results);
-      if (filteredMovies.length > 0) {
-        const featuredMovieData = await moviesAPI.getMovie(filteredMovies[0].id);
-        setFeaturedMovie(featuredMovieData.data);
+      if (response.data.results.length > 0) {
+        const firstMovie = response.data.results[0];
+        if (firstMovie.id) {
+          const movieDetails = await moviesAPI.getMovie(firstMovie.id);
+          setFeaturedMovie(movieDetails.data);
+        }
       }
     } catch (err) {
       console.error('Ошибка при загрузке featured фильма:', err);
     }
-  }, [filterMovies]);
+  }, []);
 
+  // Загружаем фильмы для текущей страницы
   const fetchMovies = useCallback(async (pageNum: number) => {
     try {
       setLoading(true);
       setError(null);
+      setMovies([]); // Очищаем текущие фильмы перед загрузкой новых
+
+      console.log('Загрузка страницы:', pageNum);
       const response = await moviesAPI.getPopular(pageNum);
-      const filteredMovies = filterMovies(response.data.results);
-      setMovies(filteredMovies);
+      console.log('Получены данные:', {
+        page: response.data.page,
+        results: response.data.results.length,
+        totalPages: response.data.total_pages
+      });
+      
+      setMovies(response.data.results);
       setTotalPages(response.data.total_pages);
-      setPage(pageNum);
     } catch (err) {
       console.error('Ошибка при загрузке фильмов:', err);
       setError('Произошла ошибка при загрузке фильмов');
+      setMovies([]);
     } finally {
       setLoading(false);
     }
-  }, [filterMovies]);
+  }, []);
 
+  // Загружаем featured фильм при монтировании
   useEffect(() => {
     fetchFeaturedMovie();
   }, [fetchFeaturedMovie]);
 
+  // Загружаем фильмы при изменении страницы
   useEffect(() => {
+    console.log('Изменение страницы на:', page);
     fetchMovies(page);
   }, [page, fetchMovies]);
 
-  const handlePageChange = useCallback((newPage: number) => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Обработчик изменения страницы
+  const handlePageChange = useCallback(async (newPage: number) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    console.log('Смена страницы на:', newPage);
     setPage(newPage);
-  }, []);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [totalPages]);
 
   return {
     movies,

@@ -3,7 +3,7 @@
 import styled from 'styled-components';
 import PageLayout from '@/components/PageLayout';
 import TVShowContent from './TVShowContent';
-import type { TVShowDetails } from '@/lib/api';
+import type { TVShow } from '@/types/movie';
 
 const Container = styled.div`
   width: 100%;
@@ -13,7 +13,7 @@ const Container = styled.div`
 
 interface TVShowPageProps {
   tvShowId: string;
-  show: TVShowDetails | null;
+  show: TVShow | null;
 }
 
 export default function TVShowPage({ tvShowId, show }: TVShowPageProps) {
@@ -21,7 +21,10 @@ export default function TVShowPage({ tvShowId, show }: TVShowPageProps) {
     return (
       <PageLayout>
         <Container>
-          <div>Сериал не найден</div>
+          <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
+            <h1 className="text-3xl font-bold mb-4">Сериал не найден</h1>
+            <p className="text-gray-400">К сожалению, запрашиваемый сериал не существует или был удален.</p>
+          </div>
         </Container>
       </PageLayout>
     );

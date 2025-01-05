@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://api.themoviedb.org/3';
+const BASE_URL = '/api/movies';
 
 if (typeof window === 'undefined' && !process.env.NEXT_PUBLIC_TMDB_ACCESS_TOKEN) {
   throw new Error('TMDB_ACCESS_TOKEN is not defined in environment variables');
@@ -9,7 +9,6 @@ if (typeof window === 'undefined' && !process.env.NEXT_PUBLIC_TMDB_ACCESS_TOKEN)
 export const api = axios.create({
     baseURL: BASE_URL,
     headers: {
-        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_TMDB_ACCESS_TOKEN}`,
         'Content-Type': 'application/json'
     }
 });
@@ -20,7 +19,21 @@ export interface MovieDetails extends Movie {
     tagline: string;
     budget: number;
     revenue: number;
-    videos: {
+    videos: {{
+      "page": 1,
+      "results": [
+        {
+          "id": 123,
+          "title": "Movie Title",
+          "overview": "Movie description",
+          "poster_path": "/path/to/poster.jpg",
+          ...
+        },
+        ...
+      ],
+      "total_pages": 500,
+      "total_results": 10000
+    }
         results: Video[];
     };
     credits: {
@@ -53,101 +66,32 @@ export interface Crew {
 
 export const moviesAPI = {
     // Получение популярных фильмов
-    getPopular: (page = 1) =>
-        api.get('/discover/movie', {
-            params: {
-                page,
-                language: 'ru-RU',
-                'vote_count.gte': 100, // минимальное количество голосов
-                'vote_average.gte': 1, // минимальный рейтинг
-                sort_by: 'popularity.desc',
-                include_adult: false,
-                'primary_release_date.lte': new Date().toISOString().split('T')[0], // только вышедшие фильмы
-            }
-        }),
-
-    // Получение данных о фильме по его TMDB ID
-    getMovie: (id: string | number) =>
-        api.get(`/movie/${id}`, {
-            params: {
-                language: 'ru-RU',
-                append_to_response: 'credits,videos,similar' // дополнительная информация
-            }
-        }),
-
-    // Поиск фильмов
-    searchMovies: (query: string, page = 1) =>
-        api.get('/search/movie', {
-            params: {
-                query,
-                page,
-                language: 'ru-RU',
-                include_adult: false,
-                'primary_release_date.lte': new Date().toISOString().split('T')[0]
-            }
-        }),
-
-    // Получение предстоящих фильмов
-    getUpcoming: (page = 1) =>
-        api.get('/movie/upcoming', {
-            params: {
-                page,
-                language: 'ru-RU',
-            }
-        }),
-
-    // Получение лучших фильмов
-    getTopRated: (page = 1) =>
-        api.get('/movie/top_rated', {
-            params: {
-                page,
-                language: 'ru-RU',
-                'vote_count.gte': 100
-            }
-        }),
-
-    // Получение фильмов по жанру
-    getMoviesByGenre: (genreId: number, page = 1) =>
-        api.get('/discover/movie', {
-            params: {
-                with_genres: genreId,
-                page,
-                language: 'ru-RU',
-                'vote_count.gte': 100,
-                'vote_average.gte': 1,
-                sort_by: 'popularity.desc',
-                include_adult: false,
-                'primary_release_date.lte': new Date().toISOString().split('T')[0]
-            }
-        }),
-
-    // Получение IMDb ID по TMDB ID для плеера
-    getImdbId: async (tmdbId: string | number) => {
-        try {
-            const response = await api.get(`/movie/${tmdbId}`, {
-                params: {
-                    language: 'en-US', // Язык для IMDb ID
-                },
-            });
-            return response.data.imdb_id;
-        } catch (error) {
-            console.error('Ошибка при получении IMDb ID:', error);
-            return null;
-        }
+    async getPopular(page = 1) {
+        const response = await api.get(`/popular?page=${page}`);
+        return response.data;
     },
 
-    // Получение видео по TMDB ID для плеера
-    getVideo: async (tmdbId: string | number) => {
-        try {
-            const response = await api.get(`/movie/${tmdbId}/videos`, {
-                params: {
-                    language: 'en-US', // Язык для видео
-                },
-            });
-            return response.data.results;
-        } catch (error) {
-            console.error('Ошибка при получении видео:', error);
-            return [];
-        }
+    // Получение данных о фильме
+    async getMovie(id: string | number) {
+        const response = await api.get(`/${id}`);
+        return response.data;
+    },
+
+    // Поиск фильмов
+    async searchMovies(query: string, page = 1) {
+        const response = await api.get(`/search?query=${encodeURIComponent(query)}&page=${page}`);
+        return response.data;
+    },
+
+    // Получение предстоящих фильмов
+    async getUpcoming(page = 1) {
+        const response = await api.get(`/upcoming?page=${page}`);
+        return response.data;
+    },
+
+    // Получение топ рейтинговых фильмов
+    async getTopRated(page = 1) {
+        const response = await api.get(`/top-rated?page=${page}`);
+        return response.data;
     }
 };

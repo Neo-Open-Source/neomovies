@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { moviesAPI } from '@/lib/api';
+import { getImageUrl } from '@/lib/neoApi';
 import type { MovieDetails } from '@/lib/api';
 import { useSettings } from '@/hooks/useSettings';
 import MoviePlayer from '@/components/MoviePlayer';
+import FavoriteButton from '@/components/FavoriteButton';
 
 declare global {
   interface Window {
@@ -120,48 +122,31 @@ const ErrorContainer = styled.div`
   color: #ff4444;
 `;
 
-
 import { useParams } from 'next/navigation';
 
-export default function MovieContent() {
-  const { id: movieId } = useParams();
+interface MovieContentProps {
+  movieId: string;
+  initialMovie: MovieDetails;
+}
+
+export default function MovieContent({ movieId, initialMovie }: MovieContentProps) {
   const { settings } = useSettings();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [movie, setMovie] = useState<MovieDetails | null>(null);
+  const [movie] = useState<MovieDetails>(initialMovie);
   const [imdbId, setImdbId] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchMovie = async () => {
-      if (!movieId) return;
-      
+    const fetchImdbId = async () => {
       try {
-        setLoading(true);
-        const response = await moviesAPI.getMovie(movieId);
-        setMovie(response.data);
-
         const newImdbId = await moviesAPI.getImdbId(movieId);
-        if (!newImdbId) {
-          setError('IMDb ID не найден');
-          return;
+        if (newImdbId) {
+          setImdbId(newImdbId);
         }
-        setImdbId(newImdbId);
-
-        setError(null);
       } catch (err) {
-        console.error('Error fetching movie:', err);
-        setError('Ошибка при загрузке фильма');
-      } finally {
-        setLoading(false);
+        console.error('Error fetching IMDb ID:', err);
       }
     };
-
-    fetchMovie();
+    fetchImdbId();
   }, [movieId]);
-
-  if (loading) return <LoadingContainer>Загрузка...</LoadingContainer>;
-  if (error) return <ErrorContainer>{error}</ErrorContainer>;
-  if (!movie || !imdbId) return null;
 
   return (
     <Container>
@@ -169,7 +154,7 @@ export default function MovieContent() {
         <MovieInfo>
           <PosterContainer>
             <Poster
-              src={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.jpg'}
+              src={getImageUrl(movie.poster_path)}
               alt={movie.title}
             />
           </PosterContainer>
@@ -188,19 +173,24 @@ export default function MovieContent() {
             </GenreList>
             {movie.tagline && <Tagline>{movie.tagline}</Tagline>}
             <Overview>{movie.overview}</Overview>
+            <div style={{ marginTop: '1rem' }}>
+              <FavoriteButton
+                mediaId={movie.id.toString()}
+                mediaType="movie"
+                title={movie.title}
+                posterPath={movie.poster_path}
+              />
+            </div>
           </Details>
         </MovieInfo>
 
-        <PlayerSection>
-          <Suspense fallback={<LoadingContainer>Загрузка плеера...</LoadingContainer>}>
-            <MoviePlayer
-              id={movie.id.toString()}
-              title={movie.title}
-              poster={movie.backdrop_path ? `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}` : undefined}
+        {imdbId && (
+          <PlayerSection>
+            <MoviePlayer 
               imdbId={imdbId}
             />
-          </Suspense>
-        </PlayerSection>
+          </PlayerSection>
+        )}
       </Content>
     </Container>
   );

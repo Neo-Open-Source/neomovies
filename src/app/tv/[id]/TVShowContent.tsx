@@ -1,26 +1,15 @@
-'use client';
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import Image from 'next/image';
-import type { TVShowDetails } from '@/lib/api';
+import type { TVShow } from '@/types/movie';
+import { tvShowsAPI, getImageUrl } from '@/lib/neoApi';
 import MoviePlayer from '@/components/MoviePlayer';
+import FavoriteButton from '@/components/FavoriteButton';
 
 const Container = styled.div`
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-`;
-
-const ShowInfo = styled.div`
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 2rem;
-  margin-bottom: 2rem;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
 `;
 
 const PosterContainer = styled.div`
@@ -31,47 +20,42 @@ const PosterContainer = styled.div`
   overflow: hidden;
 `;
 
-const InfoContent = styled.div`
+const Info = styled.div`
   color: white;
 `;
 
 const Title = styled.h1`
-  font-size: 2.5rem;
+  font-size: 2rem;
   margin-bottom: 1rem;
+  color: white;
 `;
 
 const Overview = styled.p`
-  margin-bottom: 1.5rem;
+  color: rgba(255, 255, 255, 0.8);
   line-height: 1.6;
-`;
-
-const Stats = styled.div`
-  display: flex;
-  gap: 2rem;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-`;
-
-const StatItem = styled.div`
-  span {
-    color: rgba(255, 255, 255, 0.6);
-  }
-`;
-
-const Section = styled.section`
-  margin-bottom: 2rem;
-`;
-
-const SectionTitle = styled.h2`
-  font-size: 1.5rem;
   margin-bottom: 1rem;
-  color: white;
-  padding-top: 1rem;
 `;
 
-const PlayerSection = styled(Section)`
-  margin-top: 2rem;
-  min-height: 500px;
+const Details = styled.div`
+  flex: 1;
+`;
+
+const DetailItem = styled.div`
+  margin-bottom: 0.5rem;
+  color: rgba(255, 255, 255, 0.8);
+`;
+
+const Label = styled.span`
+  color: rgba(255, 255, 255, 0.6);
+  margin-right: 0.5rem;
+`;
+
+const Value = styled.span`
+  color: white;
+`;
+
+const ButtonContainer = styled.div`
+  margin-top: 1rem;
 `;
 
 const PlayerContainer = styled.div`
@@ -83,133 +67,121 @@ const PlayerContainer = styled.div`
   overflow: hidden;
 `;
 
-const CastGrid = styled.div`
+const Content = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
-`;
+  grid-template-columns: 300px 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
 
-const CastCard = styled.div`
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 0.5rem;
-  overflow: hidden;
-  transition: transform 0.2s;
-
-  &:hover {
-    transform: translateY(-2px);
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
   }
 `;
 
-const CastImageContainer = styled.div`
-  position: relative;
-  width: 100%;
-  height: 225px;
-`;
+const parseRussianDate = (dateStr: string): Date | null => {
+  if (!dateStr) return null;
 
-const CastInfo = styled.div`
-  padding: 0.75rem;
-`;
+  const months: { [key: string]: number } = {
+    'января': 0, 'февраля': 1, 'марта': 2, 'апреля': 3,
+    'мая': 4, 'июня': 5, 'июля': 6, 'августа': 7,
+    'сентября': 8, 'октября': 9, 'ноября': 10, 'декабря': 11
+  };
 
-const CastName = styled.h3`
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
-  color: white;
-`;
+  const match = dateStr.match(/(\d+)\s+([а-яё]+)\s+(\d{4})/i);
+  if (!match) return null;
 
-const Character = styled.p`
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.6);
-`;
+  const [, day, month, year] = match;
+  const monthIndex = months[month.toLowerCase()];
+  
+  if (monthIndex === undefined) return null;
+  
+  return new Date(parseInt(year), monthIndex, parseInt(day));
+};
 
 interface TVShowContentProps {
   tvShowId: string;
-  initialShow: TVShowDetails;
+  initialShow: TVShow;
 }
 
 export default function TVShowContent({ tvShowId, initialShow }: TVShowContentProps) {
-  const [show] = useState<TVShowDetails>(initialShow);
+  const [show] = useState<TVShow>(initialShow);
+  const [imdbId, setImdbId] = useState<string | null>(null);
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('ru-RU', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
+  useEffect(() => {
+    const fetchImdbId = async () => {
+      try {
+        const newImdbId = await tvShowsAPI.getImdbId(tvShowId);
+        if (newImdbId) {
+          setImdbId(newImdbId);
+        }
+      } catch (err) {
+        console.error('Error fetching IMDb ID:', err);
+      }
+    };
+    fetchImdbId();
+  }, [tvShowId]);
 
   return (
     <Container>
-      <ShowInfo>
+      <Content>
         <PosterContainer>
           {show.poster_path && (
             <Image
-              src={`https://image.tmdb.org/t/p/w500${show.poster_path}`}
+              src={getImageUrl(show.poster_path, 'w500')}
               alt={show.name}
-              fill
-              style={{ objectFit: 'cover' }}
+              width={300}
+              height={450}
               priority
             />
           )}
         </PosterContainer>
 
-        <InfoContent>
+        <Info>
           <Title>{show.name}</Title>
           <Overview>{show.overview}</Overview>
+          
+          <Details>
+            <DetailItem>
+              <Label>Дата выхода:</Label>
+              <Value>
+                {show.first_air_date ? 
+                  (parseRussianDate(show.first_air_date)?.toLocaleDateString('ru-RU') || 'Неизвестно')
+                  : 'Неизвестно'
+                }
+              </Value>
+            </DetailItem>
+            <DetailItem>
+              <Label>Сезонов:</Label>
+              <Value>{show.number_of_seasons || 'Неизвестно'}</Value>
+            </DetailItem>
+            <DetailItem>
+              <Label>Эпизодов:</Label>
+              <Value>{show.number_of_episodes || 'Неизвестно'}</Value>
+            </DetailItem>
+            <DetailItem>
+              <Label>Рейтинг:</Label>
+              <Value>{show.vote_average.toFixed(1)}</Value>
+            </DetailItem>
+          </Details>
 
-          <Stats>
-            <StatItem>
-              <span>Дата выхода: </span>
-              {formatDate(show.first_air_date)}
-            </StatItem>
-            <StatItem>
-              <span>Сезонов: </span>
-              {show.number_of_seasons}
-            </StatItem>
-            <StatItem>
-              <span>Эпизодов: </span>
-              {show.number_of_episodes}
-            </StatItem>
-          </Stats>
-        </InfoContent>
-      </ShowInfo>
+          <ButtonContainer>
+            <FavoriteButton
+              mediaId={tvShowId}
+              mediaType="tv"
+              title={show.name}
+              posterPath={show.poster_path || ''}
+            />
+          </ButtonContainer>
+        </Info>
+      </Content>
 
-      <PlayerSection>
-        <SectionTitle>Смотреть онлайн</SectionTitle>
+      {imdbId && (
         <PlayerContainer>
-          <MoviePlayer
-            id={tvShowId}
-            title={show.name}
-            poster={show.poster_path ? `https://image.tmdb.org/t/p/w500${show.poster_path}` : ''}
-            imdbId={show.external_ids?.imdb_id}
+          <MoviePlayer 
+            imdbId={imdbId} 
+            backdrop={show.backdrop_path ? getImageUrl(show.backdrop_path, 'original') : undefined}
           />
         </PlayerContainer>
-      </PlayerSection>
-
-      {show.credits.cast.length > 0 && (
-        <Section>
-          <SectionTitle>В ролях</SectionTitle>
-          <CastGrid>
-            {show.credits.cast.slice(0, 12).map(actor => (
-              <CastCard key={actor.id}>
-                <CastImageContainer>
-                  <Image
-                    src={actor.profile_path
-                      ? `https://image.tmdb.org/t/p/w300${actor.profile_path}`
-                      : '/placeholder.png'}
-                    alt={actor.name}
-                    fill
-                    style={{ objectFit: 'cover' }}
-                  />
-                </CastImageContainer>
-                <CastInfo>
-                  <CastName>{actor.name}</CastName>
-                  <Character>{actor.character}</Character>
-                </CastInfo>
-              </CastCard>
-            ))}
-          </CastGrid>
-        </Section>
       )}
     </Container>
   );

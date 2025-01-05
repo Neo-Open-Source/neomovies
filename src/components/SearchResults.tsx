@@ -4,6 +4,7 @@ import React from 'react';
 import styled from 'styled-components';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getImageUrl } from '@/lib/neoApi';
 import { Movie, TVShow } from '@/lib/api';
 
 const ResultsContainer = styled.div`
@@ -12,7 +13,7 @@ const ResultsContainer = styled.div`
   padding: 1rem;
 `;
 
-const ResultItem = styled(Link)`
+const ResultItem = styled.div`
   display: flex;
   padding: 0.75rem;
   gap: 1rem;
@@ -53,56 +54,43 @@ const Year = styled.span`
   color: rgba(255, 255, 255, 0.6);
 `;
 
-const Type = styled.span`
-  font-size: 0.75rem;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 0.25rem 0.5rem;
-  border-radius: 1rem;
-`;
-
 interface SearchResultsProps {
   results: (Movie | TVShow)[];
   onItemClick: () => void;
 }
 
+const getYear = (date: string | undefined | null): string => {
+  if (!date) return '';
+  const year = date.split(' ')[2]; // Получаем год из формата "DD месяц YYYY г."
+  return year ? year : '';
+};
+
 export default function SearchResults({ results, onItemClick }: SearchResultsProps) {
-  const getYear = (date: string) => {
-    if (!date) return '';
-    return new Date(date).getFullYear();
-  };
-
-  const isMovie = (item: Movie | TVShow): item is Movie => {
-    return 'title' in item;
-  };
-
   return (
     <ResultsContainer>
       {results.map((item) => (
-        <ResultItem 
-          key={item.id} 
-          href={isMovie(item) ? `/movie/${item.id}` : `/tv/${item.id}`}
+        <Link
+          key={`${item.id}-${item.media_type}`}
+          href={`/${item.media_type}/${item.id}`}
           onClick={onItemClick}
         >
-          <PosterContainer>
-            <Image
-              src={item.poster_path 
-                ? `https://image.tmdb.org/t/p/w92${item.poster_path}`
-                : '/placeholder.png'}
-              alt={isMovie(item) ? item.title : item.name}
-              fill
-              style={{ objectFit: 'cover' }}
-            />
-          </PosterContainer>
-          <ItemInfo>
-            <Title>
-              {isMovie(item) ? item.title : item.name}
-              <Type>{isMovie(item) ? 'Фильм' : 'Сериал'}</Type>
-            </Title>
-            <Year>
-              {getYear(isMovie(item) ? item.release_date : item.first_air_date)}
-            </Year>
-          </ItemInfo>
-        </ResultItem>
+          <ResultItem>
+            <PosterContainer>
+              <Image
+                src={item.poster_path ? getImageUrl(item.poster_path, 'w92') : '/images/placeholder.jpg'}
+                alt={item.title || item.name}
+                width={46}
+                height={69}
+              />
+            </PosterContainer>
+            <ItemInfo>
+              <Title>{item.title || item.name}</Title>
+              <Year>
+                {getYear(item.release_date || item.first_air_date)}
+              </Year>
+            </ItemInfo>
+          </ResultItem>
+        </Link>
       ))}
     </ResultsContainer>
   );

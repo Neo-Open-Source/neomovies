@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server';
-import { searchAPI } from '@/lib/api';
-
-const TMDB_API_KEY = process.env.TMDB_API_KEY;
-const TMDB_API_URL = 'https://api.themoviedb.org/3';
+import { searchAPI } from '@/lib/neoApi';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -16,12 +13,15 @@ export async function GET(request: Request) {
   }
 
   try {
-    const { data } = await searchAPI.multiSearch(query);
-    return NextResponse.json(data);
-  } catch (error) {
+    const response = await searchAPI.multiSearch(query);
+    return NextResponse.json(response.data);
+  } catch (error: any) {
     console.error('Error searching:', error);
     return NextResponse.json(
-      { error: 'Failed to search' },
+      { 
+        error: 'Failed to search',
+        details: error.message
+      },
       { status: 500 }
     );
   }

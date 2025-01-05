@@ -2,6 +2,7 @@
 
 import { useSettings } from '@/hooks/useSettings';
 import styled from 'styled-components';
+import { useRouter } from 'next/navigation';
 
 const Container = styled.div`
   width: 100%;
@@ -66,6 +67,7 @@ const SaveButton = styled.button`
 
 export default function SettingsContent() {
   const { settings, updateSettings } = useSettings();
+  const router = useRouter();
 
   const players = [
     {
@@ -87,6 +89,8 @@ export default function SettingsContent() {
 
   const handlePlayerSelect = (playerId: string) => {
     updateSettings({ defaultPlayer: playerId as 'alloha' | 'collaps' | 'lumex' });
+    // Возвращаемся на предыдущую страницу
+    window.history.back();
   };
 
   return (
