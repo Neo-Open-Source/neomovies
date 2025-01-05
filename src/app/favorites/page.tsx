@@ -40,9 +40,16 @@ const Card = styled(Link)`
 `;
 
 const Poster = styled.div`
+  position: relative;
   width: 100%;
   aspect-ratio: 2/3;
-  object-fit: cover;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 0.5rem;
+  overflow: hidden;
+
+  img {
+    object-fit: cover;
+  }
 `;
 
 const Info = styled.div`
@@ -146,11 +153,12 @@ export default function FavoritesPage() {
           >
             <Poster>
               <Image
-                src={favorite.posterPath ? getImageUrl(favorite.posterPath) : '/placeholder.jpg'}
+                src={favorite.posterPath ? getImageUrl(favorite.posterPath) : '/images/placeholder.jpg'}
                 alt={favorite.title}
-                width={200}
-                height={300}
-                className="rounded-lg"
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="object-cover"
+                unoptimized
               />
             </Poster>
             <Info>
