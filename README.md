@@ -54,14 +54,40 @@ npm install
 
 3. Создайте файл `.env` и добавьте следующие переменные:
 ```env
+# База данных MongoDB
+MONGODB_URI=your_mongodb_uri
+
+# NextAuth конфигурация
+NEXTAUTH_SECRET=your_nextauth_secret
+NEXTAUTH_URL=http://localhost:3000
+
+# Google OAuth
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# Email конфигурация (для подтверждения регистрации)
+GMAIL_USER=your_gmail@gmail.com
+GMAIL_APP_PASSWORD=your_app_specific_password
+
 NEXT_PUBLIC_API_URL=https://neomovies-api.vercel.app
+
+# JWT конфигурация
+JWT_SECRET=your_jwt_secret
+
+# Lumex Player URL
+NEXT_PUBLIC_LUMEX_URL=your_lumex_player_url
 ```
 
-4. Запустите приложение:
+
+4. **Запустите проект:**
 ```bash
+# Режим разработки
 npm run dev
-```
 
+# Сборка для продакшена
+npm run build
+npm start
+```
 Приложение будет доступно по адресу [http://localhost:3000](http://localhost:3000)
 
 ## API
@@ -72,6 +98,21 @@ npm run dev
 - Получение детальной информации о фильме/сериале
 - Оптимизированная загрузка изображений
 - Кэширование запросов
+
+### Google OAuth
+1. Перейдите в [Google Cloud Console](https://console.cloud.google.com/)
+2. Создайте новый проект
+3. Включите Google OAuth API
+4. Создайте учетные данные OAuth 2.0
+5. Добавьте разрешенные URI перенаправления:
+   - http://localhost:3000/api/auth/callback/google
+   - https://your-domain.com/api/auth/callback/google
+
+### Gmail App Password
+1. Включите двухфакторную аутентификацию в аккаунте Google
+2. Перейдите в настройки безопасности
+3. Создайте пароль приложения
+4. Используйте этот пароль в GMAIL_APP_PASSWORD
 
 ## Структура проекта
 
