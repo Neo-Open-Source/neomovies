@@ -1,15 +1,14 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://api.themoviedb.org/3';
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-if (typeof window === 'undefined' && !process.env.NEXT_PUBLIC_TMDB_ACCESS_TOKEN) {
-  throw new Error('TMDB_ACCESS_TOKEN is not defined in environment variables');
+if (!API_URL) {
+  throw new Error('NEXT_PUBLIC_API_URL is not defined in environment variables');
 }
 
 export const api = axios.create({
-  baseURL: BASE_URL,
+  baseURL: API_URL,
   headers: {
-    'Authorization': `Bearer ${process.env.NEXT_PUBLIC_TMDB_ACCESS_TOKEN}`,
     'Content-Type': 'application/json'
   }
 });
@@ -104,14 +103,14 @@ export interface Crew {
   profile_path: string | null;
 }
 
-interface MovieResponse {
+export interface MovieResponse {
   page: number;
   results: Movie[];
   total_pages: number;
   total_results: number;
 }
 
-interface TVShowResponse {
+export interface TVShowResponse {
   page: number;
   results: TVShow[];
   total_pages: number;
@@ -120,136 +119,87 @@ interface TVShowResponse {
 
 export const moviesAPI = {
   // Получение популярных фильмов
-  getPopular: (page = 1) => 
-    api.get<MovieResponse>('/movie/popular', { 
-      params: { 
-        page,
-        language: 'ru-RU',
-      } 
-    }),
+  getPopular(page = 1) {
+    return api.get<MovieResponse>('/movies/popular', {
+      params: { page }
+    });
+  },
 
   // Получение данных о фильме по его TMDB ID
-  getMovie: (id: string | number) => 
-    api.get<MovieDetails>(`/movie/${id}`, { 
-      params: { 
-        language: 'ru-RU',
-        append_to_response: 'credits,videos,similar'
-      } 
-    }),
+  getMovie(id: string | number) {
+    return api.get<MovieDetails>(`/movies/${id}`);
+  },
 
   // Получение IMDb ID по TMDB ID для плеера
-  getImdbId: async (tmdbId: string | number) => {
-    try {
-      const response = await api.get(`/movie/${tmdbId}/external_ids`);
-      return response.data.imdb_id;
-    } catch (error) {
-      console.error('Ошибка при получении IMDb ID:', error);
-      return null;
-    }
+  getImdbId(tmdbId: string | number) {
+    return api.get<{ imdb_id: string }>(`/movies/${tmdbId}/external-ids`);
   },
 
   // Получение видео по TMDB ID для плеера
-  getVideo: async (tmdbId: string | number) => {
-    try {
-      const response = await api.get(`/movie/${tmdbId}/videos`, {
-        params: {
-          language: 'ru-RU',
-        },
-      });
-      return response.data.results;
-    } catch (error) {
-      console.error('Ошибка при получении видео:', error);
-      return [];
-    }
+  getVideo(tmdbId: string | number) {
+    return api.get<{ results: Video[] }>(`/movies/${tmdbId}/videos`);
   },
 
   // Поиск фильмов
-  searchMovies: (query: string, page = 1) => 
-    api.get<MovieResponse>('/search/movie', { 
-      params: { 
-        query, 
-        page, 
-        language: 'ru-RU',
-      } 
-    }),
+  searchMovies(query: string, page = 1) {
+    return api.get<MovieResponse>('/movies/search', {
+      params: { query, page }
+    });
+  },
 
   // Получение предстоящих фильмов
-  getUpcoming: (page = 1) => 
-    api.get('/movie/upcoming', {
-      params: {
-        page,
-        language: 'ru-RU',
-      }
-    }),
+  getUpcoming(page = 1) {
+    return api.get<MovieResponse>('/movies/upcoming', {
+      params: { page }
+    });
+  },
 
   // Получение лучших фильмов
-  getTopRated: (page = 1) => 
-    api.get('/movie/top_rated', {
-      params: {
-        page,
-        language: 'ru-RU',
-        'vote_count.gte': 100
-      }
-    }),
+  getTopRated(page = 1) {
+    return api.get<MovieResponse>('/movies/top-rated', {
+      params: { page }
+    });
+  },
 
   // Получение фильмов по жанру
-  getMoviesByGenre: (genreId: number, page = 1) => 
-    api.get('/discover/movie', {
-      params: {
-        with_genres: genreId,
-        page,
-        language: 'ru-RU',
-        'vote_count.gte': 100,
-        'vote_average.gte': 1,
-        sort_by: 'popularity.desc',
-        include_adult: false,
-        'primary_release_date.lte': new Date().toISOString().split('T')[0]
-      }
-    }),
+  getMoviesByGenre(genreId: number, page = 1) {
+    return api.get<MovieResponse>('/movies/genre/' + genreId, {
+      params: { page }
+    });
+  }
 };
 
 export const tvAPI = {
   // Получение популярных сериалов
-  getPopular: (page = 1) =>
-    api.get<TVShowResponse>('/tv/popular', {
-      params: {
-        page,
-        language: 'ru-RU',
-      }
-    }),
+  getPopular(page = 1) {
+    return api.get<TVShowResponse>('/tv/popular', {
+      params: { page }
+    });
+  },
 
   // Получение данных о сериале по его TMDB ID
-  getShow: (id: string | number) =>
-    api.get<TVShowDetails>(`/tv/${id}`, {
-      params: {
-        language: 'ru-RU',
-        append_to_response: 'credits,external_ids',
-      }
-    }),
+  getShow(id: string | number) {
+    return api.get<TVShowDetails>(`/tv/${id}`);
+  },
 
   // Получение IMDb ID по TMDB ID для плеера
-  getImdbId: (tmdbId: string | number) =>
-    api.get<{ imdb_id: string | null }>(`/tv/${tmdbId}/external_ids`),
+  getImdbId(tmdbId: string | number) {
+    return api.get<{ imdb_id: string }>(`/tv/${tmdbId}/external-ids`);
+  },
 
   // Поиск сериалов
-  searchShows: (query: string, page = 1) =>
-    api.get<TVShowResponse>('/search/tv', {
-      params: {
-        query,
-        page,
-        language: 'ru-RU',
-      }
-    }),
+  searchShows(query: string, page = 1) {
+    return api.get<TVShowResponse>('/tv/search', {
+      params: { query, page }
+    });
+  }
 };
 
 // Мультипоиск (фильмы и сериалы)
 export const searchAPI = {
-  multiSearch: (query: string, page = 1) =>
-    api.get('/search/multi', {
-      params: {
-        query,
-        page,
-        language: 'ru-RU',
-      }
-    }),
+  multiSearch(query: string, page = 1) {
+    return api.get('/search/multi', {
+      params: { query, page }
+    });
+  }
 };
