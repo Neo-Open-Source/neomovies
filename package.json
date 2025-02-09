@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.5.0",
+    "@vercel/analytics": "^1.0.1",
     "@tabler/icons-react": "^3.26.0",
     "@types/bcrypt": "^5.0.2",
     "@types/bcryptjs": "^2.4.6",

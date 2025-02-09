@@ -21,10 +21,22 @@ const nextConfig = {
         hostname: 'image.tmdb.org',
         pathname: '/**',
       },
+      // Локальная разработка
       {
         protocol: 'http',
         hostname: 'localhost',
-        port: '3010',
+        port: '3000',
+        pathname: '/images/**',
+      },
+      // Продакшен на Vercel
+      {
+        protocol: 'https',
+        hostname: 'neomovies-api.vercel.app',
+        pathname: '/images/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'neo-movies.vercel.app',
         pathname: '/images/**',
       }
     ],
@@ -38,6 +50,18 @@ const nextConfig = {
   },
   experimental: {
     scrollRestoration: true,
+  },
+  async headers() {
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
+        ],
+      },
+    ];
   },
 };
 

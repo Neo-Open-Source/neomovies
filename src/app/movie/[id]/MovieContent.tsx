@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { moviesAPI } from '@/lib/api';
+import { moviesAPI } from '@/lib/neoApi';
 import { getImageUrl } from '@/lib/neoApi';
 import type { MovieDetails } from '@/lib/api';
 import { useSettings } from '@/hooks/useSettings';
 import MoviePlayer from '@/components/MoviePlayer';
 import FavoriteButton from '@/components/FavoriteButton';
+import { formatDate } from '@/lib/utils';
 
 declare global {
   interface Window {
@@ -137,9 +138,9 @@ export default function MovieContent({ movieId, initialMovie }: MovieContentProp
   useEffect(() => {
     const fetchImdbId = async () => {
       try {
-        const newImdbId = await moviesAPI.getImdbId(movieId);
-        if (newImdbId) {
-          setImdbId(newImdbId);
+        const { data } = await moviesAPI.getMovie(movieId);
+        if (data?.imdb_id) {
+          setImdbId(data.imdb_id);
         }
       } catch (err) {
         console.error('Error fetching IMDb ID:', err);
@@ -164,7 +165,7 @@ export default function MovieContent({ movieId, initialMovie }: MovieContentProp
             <Info>
               <InfoItem>Рейтинг: {movie.vote_average.toFixed(1)}</InfoItem>
               <InfoItem>Длительность: {movie.runtime} мин.</InfoItem>
-              <InfoItem>Дата выхода: {new Date(movie.release_date).toLocaleDateString('ru-RU')}</InfoItem>
+              <InfoItem>Дата выхода: {formatDate(movie.release_date)}</InfoItem>
             </Info>
             <GenreList>
               {movie.genres.map(genre => (

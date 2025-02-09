@@ -118,7 +118,7 @@ export const moviesAPI = {
 
   // Получение IMDB ID
   getImdbId(id: string | number) {
-    return neoApi.get(`/movies/${id}/external-ids`, { timeout: 30000 }).then(res => res.data.imdb_id);
+    return neoApi.get(`/movies/${id}/external_ids`, { timeout: 30000 }).then(res => res.data.imdb_id);
   }
 };
 

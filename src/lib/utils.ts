@@ -16,9 +16,30 @@ export const formatDate = (dateString: string | Date | undefined | null) => {
   }
   
   try {
-    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+    let date: Date;
+    
+    if (typeof dateString === 'string') {
+      // Пробуем разные форматы даты
+      if (dateString.includes('T')) {
+        // ISO формат
+        date = new Date(dateString);
+      } else if (dateString.includes('-')) {
+        // YYYY-MM-DD формат
+        const [year, month, day] = dateString.split('-').map(Number);
+        date = new Date(year, month - 1, day);
+      } else if (dateString.includes('.')) {
+        // DD.MM.YYYY формат
+        const [day, month, year] = dateString.split('.').map(Number);
+        date = new Date(year, month - 1, day);
+      } else {
+        date = new Date(dateString);
+      }
+    } else {
+      date = dateString;
+    }
     
     if (isNaN(date.getTime())) {
+      console.error('Invalid date:', dateString);
       return 'Нет даты';
     }
 
@@ -28,7 +49,7 @@ export const formatDate = (dateString: string | Date | undefined | null) => {
       day: 'numeric',
     }).format(date) + ' г.';
   } catch (error) {
-    console.error('Error formatting date:', error);
+    console.error('Error formatting date:', error, dateString);
     return 'Нет даты';
   }
 };

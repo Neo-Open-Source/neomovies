@@ -106,11 +106,11 @@ export default function MoviePlayer({ id, title, poster, imdbId }: MoviePlayerPr
         setError(null);
         
         if (!imdbId) {
-          const newImdbId = await moviesAPI.getImdbId(id);
-          if (!newImdbId) {
+          const { data } = await moviesAPI.getMovie(id);
+          if (!data?.imdb_id) {
             throw new Error('IMDb ID не найден');
           }
-          imdbId = newImdbId;
+          imdbId = data.imdb_id;
         }
       } catch (err) {
         console.error('Error fetching IMDb ID:', err);
