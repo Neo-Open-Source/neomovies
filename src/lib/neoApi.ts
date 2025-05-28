@@ -69,6 +69,8 @@ export interface Movie {
   genre_ids: number[];
   runtime?: number;
   genres?: Genre[];
+  popularity?: number;
+  media_type?: string;
 }
 
 export interface MovieResponse {
@@ -79,15 +81,72 @@ export interface MovieResponse {
 }
 
 export const searchAPI = {
-  // Мультипоиск (фильмы и сериалы)
-  multiSearch(query: string, page = 1) {
-    return neoApi.get<MovieResponse>('/search/multi', {
+  // Поиск фильмов
+  searchMovies(query: string, page = 1) {
+    return neoApi.get<MovieResponse>('/movies/search', {
       params: {
         query,
         page
       },
-      timeout: 30000 // Увеличиваем таймаут до 30 секунд
+      timeout: 30000
     });
+  },
+  
+  // Поиск сериалов
+  searchTV(query: string, page = 1) {
+    return neoApi.get<MovieResponse>('/tv/search', {
+      params: {
+        query,
+        page
+      },
+      timeout: 30000
+    });
+  },
+
+  // Мультипоиск (фильмы и сериалы)
+  async multiSearch(query: string, page = 1) {
+    // Запускаем параллельные запросы к фильмам и сериалам
+    try {
+      const [moviesResponse, tvResponse] = await Promise.all([
+        this.searchMovies(query, page),
+        this.searchTV(query, page)
+      ]);
+      
+      // Объединяем результаты
+      const moviesData = moviesResponse.data;
+      const tvData = tvResponse.data;
+      
+      // Метаданные для пагинации
+      const totalResults = (moviesData.total_results || 0) + (tvData.total_results || 0);
+      const totalPages = Math.max(moviesData.total_pages || 0, tvData.total_pages || 0);
+      
+      // Добавляем информацию о типе контента
+      const moviesWithType = (moviesData.results || []).map(movie => ({
+        ...movie,
+        media_type: 'movie'
+      }));
+      
+      const tvWithType = (tvData.results || []).map(show => ({
+        ...show,
+        media_type: 'tv'
+      }));
+      
+      // Объединяем и сортируем по популярности
+      const combinedResults = [...moviesWithType, ...tvWithType]
+        .sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+      
+      return {
+        data: {
+          page: parseInt(String(page)),
+          results: combinedResults,
+          total_pages: totalPages,
+          total_results: totalResults
+        }
+      };
+    } catch (error) {
+      console.error('Error in multiSearch:', error);
+      throw error;
+    }
   }
 };
 
