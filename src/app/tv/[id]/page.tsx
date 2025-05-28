@@ -19,7 +19,13 @@ async function getData(id: string) {
 }
 
 export default async function Page(props: PageProps) {
-  const { id } = props.params;
-  const data = await getData(id);
-  return <TVShowPage tvShowId={data.id} show={data.show} />;
+  // В Next.js 14 нужно сначала использовать параметры в асинхронной функции
+  try {
+    const tvShowId = props.params.id;
+    const data = await getData(tvShowId);
+    return <TVShowPage tvShowId={data.id} show={data.show} />;
+  } catch (error) {
+    console.error('Error loading TV show page:', error);
+    return <div>Ошибка загрузки страницы сериала</div>;
+  }
 }

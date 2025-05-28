@@ -2,14 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { moviesAPI } from '@/lib/api';
-import MovieCard from '@/components/MovieCard';
-import { Movie } from '@/lib/api';
-
-interface Genre {
-  id: number;
-  name: string;
-}
+import { categoriesAPI } from '@/lib/api';
+import { Category } from '@/lib/api';
+import CategoryCard from '@/components/CategoryCard';
 
 // Styled Components
 const Container = styled.div`
@@ -18,50 +13,36 @@ const Container = styled.div`
   padding: 2rem 1rem;
 `;
 
+const Grid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+  
+  @media (max-width: 640px) {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+`;
+
 const Title = styled.h1`
-  font-size: 1.5rem;
+  font-size: 2rem;
   font-weight: bold;
   margin-bottom: 1.5rem;
   color: #fff;
 `;
 
-const GenreButtons = styled.div`
-  display: flex;
-  gap: 0.5rem;
+const Subtitle = styled.p`
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+  margin-top: -0.5rem;
   margin-bottom: 2rem;
-  flex-wrap: wrap;
-`;
-
-const GenreButton = styled.button<{ $active?: boolean }>`
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  background: ${props => props.$active ? '#3182ce' : 'rgba(255, 255, 255, 0.1)'};
-  color: ${props => props.$active ? '#fff' : 'rgba(255, 255, 255, 0.8)'};
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background: ${props => props.$active ? '#2b6cb0' : 'rgba(255, 255, 255, 0.2)'};
-  }
-`;
-
-const MovieGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1.5rem;
-  
-  @media (min-width: 640px) {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  }
 `;
 
 const LoadingContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 200px;
+  min-height: 300px;
 `;
 
 const Spinner = styled.div`
@@ -88,71 +69,90 @@ const ErrorMessage = styled.div`
   margin: 2rem 0;
 `;
 
-export default function CategoriesPage() {
-  const [genres, setGenres] = useState<Genre[]>([]);
-  const [selectedGenre, setSelectedGenre] = useState<number | null>(null);
-  const [movies, setMovies] = useState<Movie[]>([]);
+interface CategoryWithBackground extends Category {
+  backgroundUrl?: string;
+}
+
+function CategoriesPage() {
+  const [categories, setCategories] = useState<CategoryWithBackground[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Загрузка жанров при монтировании
+  // Загрузка категорий и фоновых изображений для них
   useEffect(() => {
-    const fetchGenres = async () => {
+    async function fetchCategoriesAndBackgrounds() {
       setError(null);
-      try {
-        console.log('Fetching genres...');
-        const response = await moviesAPI.getGenres();
-        console.log('Genres response:', response.data);
-        
-        if (response.data.genres && response.data.genres.length > 0) {
-          setGenres(response.data.genres);
-          setSelectedGenre(response.data.genres[0].id);
-        } else {
-          setError('Не удалось загрузить жанры');
-        }
-      } catch (error) {
-        console.error('Error fetching genres:', error);
-        setError('Ошибка при загрузке жанров');
-      }
-    };
-    fetchGenres();
-  }, []);
-
-  // Загрузка фильмов при изменении выбранного жанра
-  useEffect(() => {
-    const fetchMoviesByGenre = async () => {
-      if (!selectedGenre) return;
-      
       setLoading(true);
-      setError(null);
+      
       try {
-        console.log('Fetching movies for genre:', selectedGenre);
-        const response = await moviesAPI.getMoviesByGenre(selectedGenre);
-        console.log('Movies response:', {
-          total: response.data.results?.length,
-          first: response.data.results?.[0]
-        });
+        // Получаем список категорий
+        const categoriesResponse = await categoriesAPI.getCategories();
         
-        if (response.data.results) {
-          setMovies(response.data.results);
-        } else {
-          setError('Не удалось загрузить фильмы');
+        if (!categoriesResponse.data.categories || categoriesResponse.data.categories.length === 0) {
+          setError('Не удалось загрузить категории');
+          setLoading(false);
+          return;
         }
+        
+        // Добавляем фоновые изображения для каждой категории
+        const categoriesWithBackgrounds: CategoryWithBackground[] = await Promise.all(
+          categoriesResponse.data.categories.map(async (category: Category) => {
+            try {
+              // Сначала пробуем получить фильм для фона
+              const moviesResponse = await categoriesAPI.getMoviesByCategory(category.id, 1);
+              
+              // Проверяем, есть ли фильмы в данной категории
+              if (moviesResponse.data.results && moviesResponse.data.results.length > 0) {
+                const backgroundUrl = moviesResponse.data.results[0].backdrop_path || 
+                                    moviesResponse.data.results[0].poster_path;
+                
+                return {
+                  ...category,
+                  backgroundUrl
+                };
+              } else {
+                // Если фильмов нет, пробуем получить сериалы
+                const tvResponse = await categoriesAPI.getTVShowsByCategory(category.id, 1);
+                
+                if (tvResponse.data.results && tvResponse.data.results.length > 0) {
+                  const backgroundUrl = tvResponse.data.results[0].backdrop_path || 
+                                      tvResponse.data.results[0].poster_path;
+                  
+                  return {
+                    ...category,
+                    backgroundUrl
+                  };
+                }
+              }
+              
+              // Если ни фильмов, ни сериалов не найдено
+              return {
+                ...category,
+                backgroundUrl: undefined
+              };
+            } catch (error) {
+              console.error(`Error fetching background for category ${category.id}:`, error);
+              return category; // Возвращаем категорию без фона в случае ошибки
+            }
+          })
+        );
+        
+        setCategories(categoriesWithBackgrounds);
       } catch (error) {
-        console.error('Error fetching movies:', error);
-        setError('Ошибка при загрузке фильмов');
+        console.error('Error fetching categories:', error);
+        setError('Ошибка при загрузке категорий');
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchMoviesByGenre();
-  }, [selectedGenre]);
+    }
+    
+    fetchCategoriesAndBackgrounds();
+  }, []);
 
   if (error) {
     return (
       <Container>
-        <Title>Категории фильмов</Title>
+        <Title>Категории</Title>
         <ErrorMessage>{error}</ErrorMessage>
       </Container>
     );
@@ -160,33 +160,26 @@ export default function CategoriesPage() {
 
   return (
     <Container>
-      <Title>Категории фильмов</Title>
-
-      {/* Кнопки жанров */}
-      <GenreButtons>
-        {genres.map((genre) => (
-          <GenreButton
-            key={genre.id}
-            $active={selectedGenre === genre.id}
-            onClick={() => setSelectedGenre(genre.id)}
-          >
-            {genre.name}
-          </GenreButton>
-        ))}
-      </GenreButtons>
-
-      {/* Сетка фильмов */}
+      <Title>Категории</Title>
+      <Subtitle>Различные жанры фильмов и сериалов</Subtitle>
+      
       {loading ? (
         <LoadingContainer>
           <Spinner />
         </LoadingContainer>
       ) : (
-        <MovieGrid>
-          {movies.map((movie) => (
-            <MovieCard key={movie.id} movie={movie} />
+        <Grid>
+          {categories.map((category) => (
+            <CategoryCard 
+              key={category.id} 
+              category={category} 
+              backgroundUrl={category.backgroundUrl}
+            />
           ))}
-        </MovieGrid>
+        </Grid>
       )}
     </Container>
   );
 }
+
+export default CategoriesPage;

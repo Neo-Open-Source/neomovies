@@ -13,6 +13,12 @@ export const api = axios.create({
   }
 });
 
+export interface Category {
+  id: number;
+  name: string;
+  slug: string;
+}
+
 export interface Genre {
   id: number;
   name: string;
@@ -117,6 +123,32 @@ export interface TVShowResponse {
   total_results: number;
 }
 
+export const categoriesAPI = {
+  // Получение всех категорий
+  getCategories() {
+    return api.get<{ categories: Category[] }>('/categories');
+  },
+
+  // Получение категории по ID
+  getCategory(id: number) {
+    return api.get<Category>(`/categories/${id}`);
+  },
+
+  // Получение фильмов по категории
+  getMoviesByCategory(categoryId: number, page = 1) {
+    return api.get<MovieResponse>(`/categories/${categoryId}/movies`, {
+      params: { page }
+    });
+  },
+  
+  // Получение сериалов по категории
+  getTVShowsByCategory(categoryId: number, page = 1) {
+    return api.get<TVShowResponse>(`/categories/${categoryId}/tv`, {
+      params: { page }
+    });
+  }
+};
+
 export const moviesAPI = {
   // Получение популярных фильмов
   getPopular(page = 1) {
@@ -163,9 +195,14 @@ export const moviesAPI = {
 
   // Получение фильмов по жанру
   getMoviesByGenre(genreId: number, page = 1) {
-    return api.get<MovieResponse>('/movies/genre/' + genreId, {
-      params: { page }
+    return api.get<MovieResponse>('/movies/discover', {
+      params: { with_genres: genreId, page }
     });
+  },
+  
+  // Получение жанров
+  getGenres() {
+    return api.get<{ genres: Genre[] }>('/movies/genres');
   }
 };
 

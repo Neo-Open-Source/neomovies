@@ -75,14 +75,15 @@ const MobileNav = styled.nav`
   top: 0;
   left: 0;
   right: 0;
-  background: rgba(18, 18, 23, 0.8);
-  backdrop-filter: blur(10px);
+  background: #121217; /* Заменили полупрозрачный фон на сплошной для производительности */
+  /* Удалили тяжелый эффект blur для мобильных устройств */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); /* Добавили тень для визуального разделения */
   z-index: 50;
   padding: 0.75rem 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 60px;
+  height: 56px; /* Уменьшили высоту для компактности */
 
   @media (min-width: 769px) {
     display: none;
@@ -115,17 +116,19 @@ const MobileMenuButton = styled.button`
 
 const MobileMenu = styled.div<{ $isOpen: boolean }>`
   position: fixed;
-  top: 60px;
+  top: 56px; /* Соответствует новой высоте навбара */
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(18, 18, 23, 0.95);
-  backdrop-filter: blur(10px);
+  background: #121217; /* Сплошной фон без прозрачности */
+  /* Удалили тяжелый эффект blur */
   transform: translateX(${props => props.$isOpen ? '0' : '100%'});
-  transition: transform 0.3s ease-in-out;
+  transition: transform 0.25s ease-out; /* Ускорили анимацию */
   padding: 1rem;
   z-index: 49;
   overflow-y: auto;
+  will-change: transform; /* Подсказка браузеру для оптимизации */
+  -webkit-overflow-scrolling: touch; /* Плавный скролл на iOS */
 
   @media (min-width: 769px) {
     display: none;
@@ -136,20 +139,27 @@ const MobileMenuItem = styled.div`
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 1rem;
+  padding: 1rem 0.75rem; /* Уменьшили горизонтальные отступы */
+  margin-bottom: 0.25rem; /* Добавили отступ между элементами */
   color: white;
   text-decoration: none;
-  border-radius: 12px;
-  transition: background-color 0.2s;
+  border-radius: 8px; /* Уменьшили радиус для компактности */
   font-size: 1rem;
+  font-weight: 500; /* Добавили небольшое утолщение шрифта */
+  position: relative; /* Для анимации ripple-эффекта */
+  overflow: hidden; /* Для анимации ripple-эффекта */
 
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
+  /* Заменили плавную анимацию на мгновенную для мобильных устройств */
+  &:active {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(0.98); /* Небольшой эффект нажатия */
   }
 
   svg {
-    width: 20px;
-    height: 20px;
+    width: 22px; /* Увеличили иконки для лучшей видимости на мобильных устройствах */
+    height: 22px;
+    min-width: 22px; /* Чтобы иконки были выровнены */
+    color: #3b82f6; /* Цвет для лучшего визуального разделения */
   }
 `;
 
