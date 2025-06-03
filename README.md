@@ -157,7 +157,7 @@ neomovies/
 
 Если у вас возникли вопросы или предложения, свяжитесь с нами:
 - Email: neo.movies.mail@gmail.com
-- Telegram: @foxix_us
+- Matrix: @foxixus:matrix.org
 
 ---
 
