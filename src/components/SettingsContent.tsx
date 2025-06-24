@@ -76,11 +76,6 @@ export default function SettingsContent() {
       description: 'Основной плеер с высоким качеством',
     },
     {
-      id: 'collaps',
-      name: 'Collaps',
-      description: 'Альтернативный плеер с хорошей стабильностью',
-    },
-    {
       id: 'lumex',
       name: 'Lumex',
       description: 'Плеер с возможностью скачивания фильмов',
@@ -88,7 +83,7 @@ export default function SettingsContent() {
   ];
 
   const handlePlayerSelect = (playerId: string) => {
-    updateSettings({ defaultPlayer: playerId as 'alloha' | 'collaps' | 'lumex' });
+    updateSettings({ defaultPlayer: playerId as 'alloha' | 'lumex' });
     // Возвращаемся на предыдущую страницу
     window.history.back();
   };

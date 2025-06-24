@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { useSettings } from '@/hooks/useSettings';
 import { moviesAPI } from '@/lib/api';
@@ -88,10 +88,12 @@ interface MoviePlayerProps {
 
 export default function MoviePlayer({ id, title, poster, imdbId }: MoviePlayerProps) {
   const { settings, isInitialized } = useSettings();
-  const containerRef = useRef<HTMLDivElement>(null);
+  // containerRef removed – using direct iframe integration
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPlayer, setCurrentPlayer] = useState(settings.defaultPlayer);
+  const [iframeSrc, setIframeSrc] = useState<string | null>(null);
+  const [imdbMissing, setImdbMissing] = useState(false);
 
   useEffect(() => {
     if (isInitialized) {
@@ -124,75 +126,53 @@ export default function MoviePlayer({ id, title, poster, imdbId }: MoviePlayerPr
   }, [id, imdbId]);
 
   useEffect(() => {
-    if (settings.defaultPlayer === 'lumex') {
-      return;
-    }
+    const loadPlayer = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-    // Очищаем контейнер при изменении плеера
-    if (containerRef.current) {
-      containerRef.current.innerHTML = '';
-    }
-
-    const playerDiv = document.createElement('div');
-    playerDiv.className = 'kinobox_player';
-    containerRef.current?.appendChild(playerDiv);
-
-    const script = document.createElement('script');
-    script.src = 'https://kinobox.tv/kinobox.min.js';
-    script.async = true;
-
-    script.onload = () => {
-      if (window.kbox && containerRef.current) {
-        const playerConfig = {
-          search: {
-            imdb: imdbId,
-            title: title
-          },
-          menu: {
-            enable: false,
-            default: 'menu_list',
-            mobile: 'menu_button',
-            format: '{N} :: {T} ({Q})',
-            limit: 5,
-            open: false,
-          },
-          notFoundMessage: 'Видео не найдено.',
-          players: {
-            alloha: { enable: settings.defaultPlayer === 'alloha', position: 1 },
-            collaps: { enable: settings.defaultPlayer === 'collaps', position: 2 },
-            lumex: { enable: settings.defaultPlayer === 'lumex', position: 3 }
-          },
-          params: {
-            all: {
-              poster: poster
-            }
+        let currentImdb = imdbId;
+        if (!currentImdb) {
+          const { data } = await moviesAPI.getMovie(id);
+          const imdb = (data as any)?.imdb_id;
+          if (!imdb) {
+            setImdbMissing(true);
+          } else {
+            setImdbMissing(false);
+            currentImdb = imdb;
           }
-        };
+        }
 
-        window.kbox('.kinobox_player', playerConfig);
+        if (currentPlayer === 'alloha') {
+          // сначала попробуем по IMDb
+          let res = await fetch(`/api/alloha?imdb_id=${currentImdb}`);
+          if (!res.ok) {
+            // fallback на TMDB id (тот же id, передаваемый в компонент)
+            res = await fetch(`/api/alloha?tmdb_id=${id}`);
+          }
+          if (!res.ok) throw new Error('Видео не найдено');
+          const json = await res.json();
+          setIframeSrc(json.iframe);
+        } else if (currentPlayer === 'lumex') {
+          setIframeSrc(`${process.env.NEXT_PUBLIC_LUMEX_URL}?imdb_id=${currentImdb}`);
+        } else {
+          throw new Error('Выбран неподдерживаемый плеер');
+        }
+      } catch (err) {
+        console.error(err);
+        setError('Не удалось загрузить плеер. Попробуйте позже.');
+      } finally {
         setLoading(false);
       }
     };
 
-    document.body.appendChild(script);
-
-    return () => {
-      if (containerRef.current) {
-        containerRef.current.innerHTML = '';
-      }
-      const existingScript = document.querySelector('script[src="https://kinobox.tv/kinobox.min.js"]');
-      if (existingScript) {
-        document.body.removeChild(existingScript);
-      }
-    };
-  }, [id, title, poster, imdbId, settings.defaultPlayer]);
+    loadPlayer();
+  }, [id, imdbId, currentPlayer]);
 
   const handleRetry = () => {
     setLoading(true);
     setError(null);
-    if (containerRef.current) {
-      containerRef.current.innerHTML = '';
-    }
+    
     setLoading(false);
   };
 
@@ -208,17 +188,10 @@ export default function MoviePlayer({ id, title, poster, imdbId }: MoviePlayerPr
   return (
     <>
       <PlayerContainer>
-        {settings.defaultPlayer === 'lumex' && imdbId ? (
-          <StyledIframe
-            src={`${process.env.NEXT_PUBLIC_LUMEX_URL}?imdb_id=${imdbId}`}
-            allow="fullscreen"
-            loading="lazy"
-          />
+        {iframeSrc ? (
+          <StyledIframe src={iframeSrc} allow="fullscreen" loading="lazy" />
         ) : (
-          <>
-            <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'absolute' }} />
-            {loading && <LoadingContainer>Загрузка плеера...</LoadingContainer>}
-          </>
+          loading && <LoadingContainer>Загрузка плеера...</LoadingContainer>
         )}
       </PlayerContainer>
       {settings.defaultPlayer !== 'lumex' && (
@@ -227,6 +200,11 @@ export default function MoviePlayer({ id, title, poster, imdbId }: MoviePlayerPr
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           Для возможности скачивания фильма выберите плеер Lumex в настройках
+        </DownloadMessage>
+      )}
+      {imdbMissing && settings.defaultPlayer !== 'alloha' && (
+        <DownloadMessage>
+          Для просмотра данного фильма/сериала выберите плеер Alloha
         </DownloadMessage>
       )}
     </>

@@ -6,7 +6,7 @@ interface Settings {
   theme: 'light' | 'dark';
   language: 'ru' | 'en';
   notifications: boolean;
-  defaultPlayer: 'alloha' | 'collaps' | 'lumex';
+  defaultPlayer: 'alloha' | 'lumex';
 }
 
 const defaultSettings: Settings = {
