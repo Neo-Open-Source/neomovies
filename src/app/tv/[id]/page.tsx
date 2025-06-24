@@ -1,4 +1,7 @@
+import { Metadata } from 'next';
 import TVShowPage from './TVShowPage';
+
+export const dynamic = 'force-dynamic';
 import { tvShowsAPI } from '@/lib/neoApi';
 
 interface PageProps {
@@ -6,6 +9,25 @@ interface PageProps {
     id: string;
   };
   searchParams: { [key: string]: string | string[] | undefined };
+}
+
+// Generate SEO metadata
+export async function generateMetadata(
+  props: { params: { id: string } }
+): Promise<Metadata> {
+  try {
+    const showId = props.params.id;
+    const { data: show } = await tvShowsAPI.getTVShow(showId);
+    return {
+      title: `${show.name} - NeoMovies`,
+      description: show.overview,
+    };
+  } catch (error) {
+    console.error('Error generating TV metadata', error);
+    return {
+      title: 'Сериал - NeoMovies',
+    };
+  }
 }
 
 async function getData(id: string) {
