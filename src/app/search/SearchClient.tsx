@@ -44,23 +44,6 @@ export default function SearchClient() {
 
   return (
     <div className="min-h-screen bg-background text-foreground w-full px-4 sm:px-6 lg:px-8 py-8">
-      {/* Search form */}
-      <form onSubmit={handleSearch} className="mb-8 flex justify-center max-w-xl mx-auto">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Поиск фильмов и сериалов..."
-          className="flex-1 rounded-l-md border border-transparent bg-card px-4 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
-        />
-        <button
-          type="submit"
-          className="rounded-r-md bg-accent px-4 py-2 text-white hover:bg-accent/90"
-        >
-          Найти
-        </button>
-      </form>
-
       {searchParams.get('q') && (
         <h1 className="text-2xl font-bold mb-8 text-center">
           Результаты поиска для: <span className="text-primary">"{searchParams.get('q')}"</span>
