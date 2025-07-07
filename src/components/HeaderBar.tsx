@@ -62,13 +62,15 @@ export default function HeaderBar({ onBurgerClick }: { onBurgerClick?: () => voi
       <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Top bar */}
         <div className="flex items-center justify-between h-14">
-          <div className="flex items-center space-x-6">
+          {/* Hide logo on small screens to give more space to search bar */}
+          <div className="hidden sm:flex items-center space-x-6">
             <Link href="/" className="text-xl font-bold text-gray-900 dark:text-white">
               Neo<span className="text-red-500">Movies</span>
             </Link>
           </div>
 
-          <form onSubmit={handleSearch} className="flex-1 max-w-xl mx-8">
+          {/* Search form - now more responsive */}
+          <form onSubmit={handleSearch} className="flex-1 min-w-0 max-w-xl sm:mx-8">
              <div className="relative">
                 <input
                   type="text"
