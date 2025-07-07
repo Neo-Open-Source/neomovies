@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import { favoritesAPI } from '@/lib/favoritesApi';
 import { Heart } from 'lucide-react';
 import styled from 'styled-components';
@@ -39,7 +38,7 @@ interface FavoriteButtonProps {
 }
 
 export default function FavoriteButton({ mediaId, mediaType, title, posterPath, className }: FavoriteButtonProps) {
-  const { data: session, status } = useSession();
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const [isFavorite, setIsFavorite] = useState(false);
 
   // Преобразуем mediaId в строку для сравнения
@@ -47,33 +46,28 @@ export default function FavoriteButton({ mediaId, mediaType, title, posterPath, 
 
   useEffect(() => {
     const checkFavorite = async () => {
-      // Проверяем только если пользователь авторизован
-      if (status !== 'authenticated' || !session?.user?.email) return;
+      if (!token) return;
 
       try {
-        const response = await favoritesAPI.getFavorites();
-        const favorites = response.data;
-        const isFav = favorites.some(
-          fav => fav.mediaId === mediaIdString && fav.mediaType === mediaType
-        );
-        setIsFavorite(isFav);
+        const { data } = await favoritesAPI.checkFavorite(mediaIdString);
+        setIsFavorite(!!data.isFavorite);
       } catch (error) {
         console.error('Error checking favorite status:', error);
       }
     };
 
     checkFavorite();
-  }, [session?.user?.email, mediaIdString, mediaType, status]);
+  }, [token, mediaIdString]);
 
   const toggleFavorite = async () => {
-    if (!session?.user?.email) {
+    if (!token) {
       toast.error('Для добавления в избранное необходимо авторизоваться');
       return;
     }
 
     try {
       if (isFavorite) {
-        await favoritesAPI.removeFavorite(mediaIdString, mediaType);
+        await favoritesAPI.removeFavorite(mediaIdString);
         toast.success('Удалено из избранного');
         setIsFavorite(false);
       } else {
@@ -81,7 +75,7 @@ export default function FavoriteButton({ mediaId, mediaType, title, posterPath, 
           mediaId: mediaIdString,
           mediaType,
           title,
-          posterPath: posterPath || undefined,
+          posterPath: posterPath || '',
         });
         toast.success('Добавлено в избранное');
         setIsFavorite(true);

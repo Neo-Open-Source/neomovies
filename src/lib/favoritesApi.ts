@@ -1,30 +1,24 @@
-import axios from 'axios';
+import { api } from './api';
 
-// Создаем экземпляр axios
-const api = axios.create({
-  headers: {
-    'Content-Type': 'application/json'
-  }
-});
 
 export const favoritesAPI = {
   // Получить все избранные
   getFavorites() {
-    return api.get('/api/favorites');
+    return api.get('/favorites');
   },
 
   // Добавить в избранное
-  addFavorite(data: { mediaId: string; mediaType: 'movie' | 'tv'; title: string; posterPath?: string }) {
-    return api.post('/api/favorites', data);
+  addFavorite(data: { mediaId: string; mediaType: 'movie' | 'tv', title: string, posterPath: string }) {
+    return api.post(`/favorites`, data);
   },
 
   // Удалить из избранного
-  removeFavorite(mediaId: string, mediaType: 'movie' | 'tv') {
-    return api.delete(`/api/favorites/${mediaId}?mediaType=${mediaType}`);
+  removeFavorite(mediaId: string) {
+    return api.delete(`/favorites/${mediaId}`);
   },
 
   // Проверить есть ли в избранном
-  checkFavorite(mediaId: string, mediaType: 'movie' | 'tv') {
-    return api.get(`/api/favorites/check/${mediaId}?mediaType=${mediaType}`);
+  checkFavorite(mediaId: string) {
+    return api.get(`/favorites/check/${mediaId}`);
   }
 };

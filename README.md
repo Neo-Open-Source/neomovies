@@ -26,12 +26,11 @@ Neo Movies - это современная веб-платформа постр�
   - React 18
   - TypeScript
   - Styled Components
-  - NextAuth.js
+  - JWT-based authentication (custom)
 
 - **Backend:**
-  - Next.js
-  - MongoDB
-  - Mongoose
+  - Node.js + Express (neomovies-api)
+  - MongoDB (native driver)
 
 - **Дополнительно:**
   - ESLint
@@ -54,31 +53,9 @@ npm install
 
 3. Создайте файл `.env` и добавьте следующие переменные:
 ```env
-# База данных MongoDB
-MONGODB_URI=your_mongodb_uri
-
-# NextAuth конфигурация
-NEXTAUTH_SECRET=your_nextauth_secret
-NEXTAUTH_URL=http://localhost:3000
-
-# Google OAuth
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-
-# Email конфигурация (для подтверждения регистрации)
-GMAIL_USER=your_gmail@gmail.com
-GMAIL_APP_PASSWORD=your_app_specific_password
-
 NEXT_PUBLIC_API_URL=https://neomovies-api.vercel.app
-
-# JWT конфигурация
-JWT_SECRET=your_jwt_secret
-
-# Lumex Player URL
-NEXT_PUBLIC_LUMEX_URL=your_lumex_player_url
-
-#Alloha token
-ALLOHA_TOKEN=your_token
+NEXT_PUBLIC_TMDB_API_KEY=your_tmdb_api_key
+NEXT_PUBLIC_TMDB_ACCESS_TOKEN=your_tmdb_access_token
 ```
 
 
@@ -93,7 +70,7 @@ npm start
 ```
 Приложение будет доступно по адресу [http://localhost:3000](http://localhost:3000)
 
-## API
+## API (neomovies-api)
 
 Приложение использует отдельный API сервер. API предоставляет следующие возможности:
 
@@ -102,20 +79,15 @@ npm start
 - Оптимизированная загрузка изображений
 - Кэширование запросов
 
-### Google OAuth
-1. Перейдите в [Google Cloud Console](https://console.cloud.google.com/)
-2. Создайте новый проект
-3. Включите Google OAuth API
-4. Создайте учетные данные OAuth 2.0
-5. Добавьте разрешенные URI перенаправления:
-   - http://localhost:3000/api/auth/callback/google
-   - https://your-domain.com/api/auth/callback/google
-
 ### Gmail App Password
 1. Включите двухфакторную аутентификацию в аккаунте Google
 2. Перейдите в настройки безопасности
 3. Создайте пароль приложения
 4. Используйте этот пароль в GMAIL_APP_PASSWORD
+
+Backend `.env` пример смотрите в репозитории [neomovies-api](https://gitlab.com/foxixus/neomovies-api).
+
+---
 
 ## Структура проекта
 

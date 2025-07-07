@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { api } from '@/lib/api';
+import { AxiosError } from 'axios';
 import { useRouter } from 'next/navigation';
 import styled from 'styled-components';
 
@@ -91,29 +92,27 @@ export default function AdminLoginClient() {
     setIsLoading(true);
 
     try {
-      const result = await signIn('credentials', {
+      const response = await api.post('/auth/login', {
         email,
         password,
-        isAdminLogin: 'true',
-        redirect: false,
       });
 
-      if (result?.error) {
-        switch (result.error) {
-          case 'NOT_AN_ADMIN':
-            setError('У вас нет прав администратора');
-            break;
-          case 'EMAIL_NOT_VERIFIED':
-            setError('Пожалуйста, подтвердите свой email');
-            break;
-          default:
-            setError('Неверный email или пароль');
-        }
-      } else {
-        router.push('/admin');
+      const { token, user } = response.data;
+
+      if (user?.role !== 'admin') {
+        setError('У вас нет прав администратора.');
+        setIsLoading(false);
+        return;
       }
-    } catch (error) {
-      setError('Произошла ошибка при входе');
+
+      localStorage.setItem('token', token);
+      localStorage.setItem('userName', user.name);
+      localStorage.setItem('userEmail', user.email);
+
+      router.push('/admin');
+    } catch (err) {
+      const axiosError = err as AxiosError<{ message: string }>;
+      setError(axiosError.response?.data?.message || 'Неверный email или пароль');
     } finally {
       setIsLoading(false);
     }

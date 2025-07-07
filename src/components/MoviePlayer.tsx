@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { useSettings } from '@/hooks/useSettings';
-import { moviesAPI } from '@/lib/api';
+import { moviesAPI, api } from '@/lib/api';
 
 const PlayerContainer = styled.div`
   position: relative;
@@ -91,13 +91,13 @@ export default function MoviePlayer({ id, title, poster, imdbId }: MoviePlayerPr
   // containerRef removed – using direct iframe integration
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPlayer, setCurrentPlayer] = useState(settings.defaultPlayer);
+
   const [iframeSrc, setIframeSrc] = useState<string | null>(null);
-  const [imdbMissing, setImdbMissing] = useState(false);
+  const [resolvedImdb, setResolvedImdb] = useState<string | null>(imdbId ?? null);
 
   useEffect(() => {
     if (isInitialized) {
-      setCurrentPlayer(settings.defaultPlayer);
+      // setCurrentPlayer(settings.defaultPlayer);
     }
   }, [settings.defaultPlayer, isInitialized]);
 
@@ -112,7 +112,7 @@ export default function MoviePlayer({ id, title, poster, imdbId }: MoviePlayerPr
           if (!data?.imdb_id) {
             throw new Error('IMDb ID не найден');
           }
-          imdbId = data.imdb_id;
+          setResolvedImdb(data.imdb_id);
         }
       } catch (err) {
         console.error('Error fetching IMDb ID:', err);
@@ -122,41 +122,47 @@ export default function MoviePlayer({ id, title, poster, imdbId }: MoviePlayerPr
       }
     };
 
-    fetchImdbId();
-  }, [id, imdbId]);
+    if (!resolvedImdb) {
+      fetchImdbId();
+    }
+  }, [id, resolvedImdb]);
 
   useEffect(() => {
     const loadPlayer = async () => {
+      if (!isInitialized || !resolvedImdb) return;
       try {
         setLoading(true);
         setError(null);
 
-        let currentImdb = imdbId;
-        if (!currentImdb) {
-          const { data } = await moviesAPI.getMovie(id);
-          const imdb = (data as any)?.imdb_id;
-          if (!imdb) {
-            setImdbMissing(true);
-          } else {
-            setImdbMissing(false);
-            currentImdb = imdb;
-          }
-        }
+        const basePath = settings.defaultPlayer === 'alloha' ? '/players/alloha' : '/players/lumex';
+        const queryParams = { imdb_id: resolvedImdb };
 
-        if (currentPlayer === 'alloha') {
-          // сначала попробуем по IMDb
-          let res = await fetch(`/api/alloha?imdb_id=${currentImdb}`);
-          if (!res.ok) {
-            // fallback на TMDB id (тот же id, передаваемый в компонент)
-            res = await fetch(`/api/alloha?tmdb_id=${id}`);
+        try {
+          const response = await api.get(basePath, { params: queryParams });
+          if (!response.data) {
+            throw new Error('Empty response');
           }
-          if (!res.ok) throw new Error('Видео не найдено');
-          const json = await res.json();
-          setIframeSrc(json.iframe);
-        } else if (currentPlayer === 'lumex') {
-          setIframeSrc(`${process.env.NEXT_PUBLIC_LUMEX_URL}?imdb_id=${currentImdb}`);
-        } else {
-          throw new Error('Выбран неподдерживаемый плеер');
+
+          let src: string | null = null;
+          if (response.data.iframe) {
+            src = response.data.iframe;
+          } else if (response.data.src) {
+            src = response.data.src;
+          } else if (response.data.url) {
+            src = response.data.url;
+          } else if (typeof response.data === 'string') {
+            const match = response.data.match(/<iframe[^>]*src="([^"]+)"/i);
+            if (match && match[1]) src = match[1];
+          }
+          if (!src) {
+            throw new Error('Invalid response format');
+          }
+          setIframeSrc(src);
+        } catch (err) {
+          console.error(err);
+          setError('Не удалось загрузить плеер. Попробуйте позже.');
+        } finally {
+          setLoading(false);
         }
       } catch (err) {
         console.error(err);
@@ -167,7 +173,7 @@ export default function MoviePlayer({ id, title, poster, imdbId }: MoviePlayerPr
     };
 
     loadPlayer();
-  }, [id, imdbId, currentPlayer]);
+  }, [id, resolvedImdb, isInitialized, settings.defaultPlayer]);
 
   const handleRetry = () => {
     setLoading(true);
@@ -202,11 +208,7 @@ export default function MoviePlayer({ id, title, poster, imdbId }: MoviePlayerPr
           Для возможности скачивания фильма выберите плеер Lumex в настройках
         </DownloadMessage>
       )}
-      {imdbMissing && settings.defaultPlayer !== 'alloha' && (
-        <DownloadMessage>
-          Для просмотра данного фильма/сериала выберите плеер Alloha
-        </DownloadMessage>
-      )}
+
     </>
   );
 }

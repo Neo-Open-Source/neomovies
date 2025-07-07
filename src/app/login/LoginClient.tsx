@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { signIn } from 'next-auth/react';
+import { useAuth } from '../../hooks/useAuth';
 import { useRouter } from 'next/navigation';
 
 const Container = styled.div`
@@ -173,6 +173,14 @@ export default function LoginClient() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+  const { login, register } = useAuth();
+
+  // Redirect authenticated users away from /login
+  useEffect(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('token')) {
+      router.replace('/');
+    }
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -180,38 +188,11 @@ export default function LoginClient() {
 
     try {
       if (isLogin) {
-        const result = await signIn('credentials', {
-          redirect: false,
-          email,
-          password,
-        });
-
-        if (result?.error) {
-          if (result.error === 'EMAIL_NOT_VERIFIED') {
-            router.push(`/verify?email=${encodeURIComponent(email)}`);
-            return;
-          }
-          throw new Error(result.error);
-        }
-
-        router.push('/');
+        await login(email, password);
       } else {
-        const response = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, name }),
-        });
-
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || 'Ошибка при регистрации');
-        }
-
-        const data = await response.json();
-        
+        await register(email, password, name);
         // Сохраняем пароль для автовхода после верификации
         localStorage.setItem('password', password);
-        
         router.push(`/verify?email=${encodeURIComponent(email)}`);
       }
     } catch (err) {

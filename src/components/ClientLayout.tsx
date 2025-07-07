@@ -1,6 +1,6 @@
 'use client';
 
-import { SessionProvider } from 'next-auth/react';
+
 import { ThemeProvider } from 'styled-components';
 import StyledComponentsRegistry from '@/lib/registry';
 import Navbar from './Navbar';
@@ -16,14 +16,12 @@ const theme = {
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider>
-      <StyledComponentsRegistry>
+    <StyledComponentsRegistry>
         <ThemeProvider theme={theme}>
           <Navbar />
           {children}
           <Toaster position="bottom-right" />
         </ThemeProvider>
       </StyledComponentsRegistry>
-    </SessionProvider>
   );
 }

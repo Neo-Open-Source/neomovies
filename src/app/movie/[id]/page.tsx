@@ -9,14 +9,13 @@ interface PageProps {
 }
 
 // Генерация метаданных для страницы
-export async function generateMetadata(
-  props: { params: { id: string }}
-): Promise<Metadata> {
+export async function generateMetadata(props: Promise<PageProps>): Promise<Metadata> {
+  const { params } = await props;
   // В Next.js 14, нужно сначала получить данные фильма,
   // а затем использовать их для метаданных
   try {
     // Получаем id для использования в запросе
-    const movieId = props.params.id;
+    const movieId = params.id;
     
     // Запрашиваем данные фильма
     const { data: movie } = await moviesAPI.getMovie(movieId);

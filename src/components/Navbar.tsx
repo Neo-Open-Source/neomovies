@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useSession, signOut } from 'next-auth/react';
+import { useAuth } from '../hooks/useAuth';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import styled from 'styled-components';
 import SearchModal from './SearchModal';
@@ -226,8 +227,52 @@ const AuthButtons = styled.div`
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const { data: session, status } = useSession();
+  const { logout } = useAuth();
+  const [token, setToken] = useState<string | null>(null);
+  const [userName, setUserName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  // Читаем localStorage после монтирования
+  useEffect(() => {
+    const storedToken = localStorage.getItem('token');
+    setToken(storedToken);
+    if (storedToken) {
+      const lsName = localStorage.getItem('userName');
+      const lsEmail = localStorage.getItem('userEmail');
+      if (lsName) setUserName(lsName);
+      if (lsEmail) setUserEmail(lsEmail);
+
+      if (!lsName || !lsEmail) {
+        try {
+          const payload = JSON.parse(atob(storedToken.split('.')[1]));
+          const name = lsName || payload.name || payload.username || payload.userName || payload.sub || '';
+          const email = lsEmail || payload.email || '';
+          if (name) {
+            localStorage.setItem('userName', name);
+            setUserName(name);
+          }
+          if (email) {
+            localStorage.setItem('userEmail', email);
+            setUserEmail(email);
+          }
+        } catch {}
+      }
+    }
+    setMounted(true);
+    // слушаем события авторизации, чтобы обновлять ник без перезагрузки
+    const handleAuthChanged = () => {
+      const t = localStorage.getItem('token');
+      setToken(t);
+      setUserName(localStorage.getItem('userName') || '');
+      setUserEmail(localStorage.getItem('userEmail') || '');
+    };
+    window.addEventListener('auth-changed', handleAuthChanged);
+    return () => window.removeEventListener('auth-changed', handleAuthChanged);
+  }, []);
   const pathname = usePathname();
+
+  // Ждём, пока компонент смонтируется, чтобы избежать гидрации с разными ветками
   const router = useRouter();
 
   // Скрываем навбар на определенных страницах
@@ -235,10 +280,7 @@ export default function Navbar() {
     return null;
   }
 
-  // Если сессия загружается, показываем плейсхолдер
-  if (status === 'loading') {
-    return null;
-  }
+  
 
   const handleNavigation = (href: string, onClick?: () => void) => {
     if (onClick) {
@@ -304,11 +346,9 @@ export default function Navbar() {
       {/* Desktop Sidebar */}
       <DesktopSidebar>
         <LogoContainer>
-          <div onClick={() => router.push('/')} style={{ cursor: 'pointer' }}>
-            <Logo as="div">
+          <Logo href="/">
               Neo <span>Movies</span>
             </Logo>
-          </div>
         </LogoContainer>
 
         <MenuContainer>
@@ -329,19 +369,19 @@ export default function Navbar() {
           ))}
         </MenuContainer>
 
-        {session ? (
+        {token ? (
           <UserProfile>
             <UserButton onClick={() => router.push('/profile')} style={{ cursor: 'pointer' }}>
               <UserAvatar>
-                {session.user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || ''}
+                {userName?.split(' ').map(n => n[0]).join('').toUpperCase() || ''}
               </UserAvatar>
               <UserInfo>
-                <div>{session.user?.name}</div>
-                <div>{session.user?.email}</div>
+                <div>{userName}</div>
+                <div>{userEmail}</div>
               </UserInfo>
             </UserButton>
           </UserProfile>
-        ) : (
+        ) : mounted ? (
           <AuthButtons>
             <div onClick={() => router.push('/login')} style={{ cursor: 'pointer' }}>
               <MobileMenuItem as="div" style={{ justifyContent: 'center', background: '#3b82f6' }}>
@@ -349,7 +389,7 @@ export default function Navbar() {
               </MobileMenuItem>
             </div>
           </AuthButtons>
-        )}
+        ): null}
       </DesktopSidebar>
 
       {/* Mobile Navigation */}
@@ -366,15 +406,15 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       <MobileMenu $isOpen={isMobileMenuOpen}>
-        {session ? (
+        {token ? (
           <UserProfile>
-            <UserButton onClick={() => signOut()}>
+            <UserButton onClick={() => { logout(); setIsMobileMenuOpen(false); }}>
               <UserAvatar>
-                {session.user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || ''}
+                {userName?.split(' ').map(n => n[0]).join('').toUpperCase() || ''}
               </UserAvatar>
               <UserInfo>
-                <div>{session.user?.name}</div>
-                <div>{session.user?.email}</div>
+                <div>{userName}</div>
+                <div>{userEmail}</div>
               </UserInfo>
             </UserButton>
           </UserProfile>
@@ -398,7 +438,7 @@ export default function Navbar() {
           </div>
         ))}
 
-        {!session && (
+        {!token && (
           <AuthButtons>
             <div onClick={() => {
               router.push('/login');

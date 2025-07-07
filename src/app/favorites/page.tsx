@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { favoritesAPI } from '@/lib/favoritesApi';
 import { getImageUrl } from '@/lib/neoApi';
 
@@ -87,14 +87,15 @@ interface Favorite {
 }
 
 export default function FavoritesPage() {
-  const { data: session } = useSession();
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchFavorites = async () => {
-      if (!session?.user) {
-        setLoading(false);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
         return;
       }
 
@@ -102,14 +103,19 @@ export default function FavoritesPage() {
         const response = await favoritesAPI.getFavorites();
         setFavorites(response.data);
       } catch (error) {
-        console.error('Error fetching favorites:', error);
+        console.error('Failed to fetch favorites:', error);
+        // If token is invalid, clear it and redirect to login
+        localStorage.removeItem('token');
+        localStorage.removeItem('userName');
+        localStorage.removeItem('userEmail');
+        router.push('/login');
       } finally {
         setLoading(false);
       }
     };
 
     fetchFavorites();
-  }, [session?.user]);
+  }, [router]);
 
   if (loading) {
     return (
@@ -120,16 +126,7 @@ export default function FavoritesPage() {
     );
   }
 
-  if (!session?.user) {
-    return (
-      <Container>
-        <Title>Избранное</Title>
-        <EmptyState>
-          Для доступа к избранному необходимо авторизоваться
-        </EmptyState>
-      </Container>
-    );
-  }
+  
 
   if (favorites.length === 0) {
     return (

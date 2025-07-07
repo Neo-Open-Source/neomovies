@@ -1,10 +1,10 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/hooks/useAuth';
 import styled from 'styled-components';
 import GlassCard from '@/components/GlassCard';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -70,16 +70,28 @@ const SignOutButton = styled.button`
 `;
 
 export default function ProfilePage() {
-  const { data: session, status } = useSession();
+  const { logout } = useAuth();
   const router = useRouter();
+  const [userName, setUserName] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    const token = localStorage.getItem('token');
+    if (!token) {
       router.push('/login');
+    } else {
+      setUserName(localStorage.getItem('userName'));
+      setUserEmail(localStorage.getItem('userEmail'));
+      setLoading(false);
     }
-  }, [status, router]);
+  }, [router]);
 
-  if (status === 'loading') {
+  const handleSignOut = () => {
+    logout();
+  };
+
+  if (loading) {
     return (
       <Container>
         <Content>
@@ -91,7 +103,7 @@ export default function ProfilePage() {
     );
   }
 
-  if (!session) {
+  if (!userName) {
     return null;
   }
 
@@ -101,14 +113,12 @@ export default function ProfilePage() {
         <GlassCard>
           <ProfileHeader>
             <Avatar>
-              {session.user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || ''}
+              {userName?.split(' ').map(n => n[0]).join('').toUpperCase() || ''}
             </Avatar>
-            <Name>{session.user?.name}</Name>
-            <Email>{session.user?.email}</Email>
+            <Name>{userName}</Name>
+            <Email>{userEmail}</Email>
+            <SignOutButton onClick={handleSignOut}>Выйти</SignOutButton>
           </ProfileHeader>
-          <SignOutButton onClick={() => router.push('/settings')}>
-            Настройки
-          </SignOutButton>
         </GlassCard>
       </Content>
     </Container>

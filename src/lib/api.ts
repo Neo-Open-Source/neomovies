@@ -13,6 +13,25 @@ export const api = axios.create({
   }
 });
 
+// Attach JWT token if present in localStorage
+if (typeof window !== 'undefined') {
+  const token = localStorage.getItem('token');
+  if (token) {
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  }
+}
+
+// Update stored token on login response with { token }
+api.interceptors.response.use((response) => {
+  if (response.config.url?.includes('/auth/login') && response.data?.token) {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('token', response.data.token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+    }
+  }
+  return response;
+});
+
 export interface Category {
   id: number;
   name: string;
@@ -41,6 +60,7 @@ export interface Movie {
 export interface MovieDetails extends Movie {
   genres: Genre[];
   runtime: number;
+  imdb_id?: string | null;
   tagline: string;
   budget: number;
   revenue: number;
