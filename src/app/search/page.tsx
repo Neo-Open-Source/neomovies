@@ -1,5 +1,8 @@
 'use client';
 
+// Страница использует useSearchParams, поэтому отключаем статическую генерацию
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, FormEvent } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Movie, TVShow, moviesAPI, tvAPI } from '@/lib/api';
