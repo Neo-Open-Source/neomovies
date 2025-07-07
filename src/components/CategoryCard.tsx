@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import styled from 'styled-components';
 import { Category } from '@/lib/api';
 
 interface CategoryCardProps {
   category: Category;
-  backgroundUrl?: string;
+  backgroundUrl?: string | null;
 }
 
 // Словарь цветов для разных жанров
@@ -47,69 +46,9 @@ function getCategoryColor(categoryId: number): string {
   return genreColors[categoryId] || '#3949AB'; // Индиго как запасной вариант
 }
 
-const CardContainer = styled.div<{ $bgUrl: string; $bgColor: string }>`
-  position: relative;
-  width: 100%;
-  height: 180px;
-  border-radius: 12px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  background-image: url(${props => props.$bgUrl || '/images/placeholder.jpg'});
-  background-size: cover;
-  background-position: center;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: ${props => props.$bgColor};
-    opacity: 0.7;
-    transition: opacity 0.3s ease;
-  }
-  
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-    
-    &::after {
-      opacity: 0.8;
-    }
-  }
-`;
-
-const CardContent = styled.div`
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  padding: 1rem;
-  color: white;
-  text-align: center;
-`;
-
-const CategoryName = styled.h3`
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin: 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-`;
-
-const CategoryCount = styled.p`
-  font-size: 0.875rem;
-  opacity: 0.9;
-  margin: 0.5rem 0 0;
-`;
-
 function CategoryCard({ category, backgroundUrl }: CategoryCardProps) {
   const router = useRouter();
-  const [imageUrl, setImageUrl] = useState<string>(backgroundUrl || '/images/placeholder.jpg');
+  const [imageUrl] = useState<string>(backgroundUrl || '/images/placeholder.jpg');
   
   const categoryColor = getCategoryColor(category.id);
   
@@ -118,18 +57,22 @@ function CategoryCard({ category, backgroundUrl }: CategoryCardProps) {
   }
   
   return (
-    <CardContainer 
-      $bgUrl={imageUrl} 
-      $bgColor={categoryColor}
+    <div
       onClick={handleClick}
       role="button"
       aria-label={`Категория ${category.name}`}
+      className="relative w-full h-44 rounded-xl overflow-hidden cursor-pointer transition-transform duration-300 ease-in-out hover:-translate-y-1.5 hover:shadow-2xl bg-cover bg-center group"
+      style={{ backgroundImage: `url(${imageUrl})` }}
     >
-      <CardContent>
-        <CategoryName>{category.name}</CategoryName>
-        <CategoryCount>Фильмы и сериалы</CategoryCount>
-      </CardContent>
-    </CardContainer>
+      <div
+        className="absolute inset-0 transition-opacity duration-300 ease-in-out opacity-70 group-hover:opacity-80"
+        style={{ backgroundColor: categoryColor }}
+      ></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent transition-opacity duration-300" />
+      <div className="relative z-10 flex flex-col justify-center items-center h-full p-4 text-white text-center">
+        <h3 className="text-2xl font-bold m-0 drop-shadow-lg">{category.name}</h3>
+      </div>
+    </div>
   );
 }
 

@@ -1,66 +1,7 @@
 'use client';
 
-import styled from 'styled-components';
 import { usePathname } from 'next/navigation';
-import Navbar from './Navbar';
-
-const Layout = styled.div`
-  display: flex;
-  min-height: 100vh;
-`;
-
-const MainContent = styled.main<{ $isSettingsPage: boolean }>`
-  flex: 1;
-  margin-left: 220px;
-  padding: 0;
-  overflow: hidden;
-
-  ${props => props.$isSettingsPage && `
-    display: flex;
-    justify-content: center;
-    padding-top: 2rem;
-  `}
-
-  @media (max-width: 768px) {
-    margin-left: 0;
-    padding-top: ${props => props.$isSettingsPage ? 'calc(60px + 2rem)' : '60px'};
-  }
-`;
-
-const NotFoundContent = styled.main`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background: #0a0a0a;
-  color: white;
-  text-align: center;
-  padding: 2rem;
-
-  h1 {
-    font-size: 6rem;
-    margin: 0;
-    color: #2196f3;
-  }
-
-  p {
-    font-size: 1.5rem;
-    margin: 1rem 0 2rem;
-    color: rgba(255, 255, 255, 0.7);
-  }
-
-  a {
-    color: #2196f3;
-    text-decoration: none;
-    font-weight: 500;
-    
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-`;
+import Link from 'next/link';
 
 export default function PageLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -69,20 +10,21 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
 
   if (is404Page) {
     return (
-      <NotFoundContent>
-        <h1>404</h1>
-        <p>Страница не найдена</p>
-        <a href="/">Вернуться на главную</a>
-      </NotFoundContent>
+      <main className="flex-1 flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white text-center p-8">
+        <h1 className="text-6xl font-bold m-0 text-blue-500">404</h1>
+        <p className="text-2xl my-4 text-gray-300">Страница не найдена</p>
+        <Link href="/" className="text-blue-500 font-medium hover:underline">
+          Вернуться на главную
+        </Link>
+      </main>
     );
   }
 
   return (
-    <Layout>
-      <Navbar />
-      <MainContent $isSettingsPage={isSettingsPage}>
+    <div className="flex min-h-screen">
+      <main className={`flex-1 overflow-hidden ${isSettingsPage ? 'flex justify-center pt-8' : ''}`}>
         {children}
-      </MainContent>
-    </Layout>
+      </main>
+    </div>
   );
 }

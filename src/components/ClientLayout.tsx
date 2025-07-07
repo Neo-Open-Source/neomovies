@@ -1,27 +1,22 @@
 'use client';
 
-
-import { ThemeProvider } from 'styled-components';
-import StyledComponentsRegistry from '@/lib/registry';
-import Navbar from './Navbar';
+import HeaderBar from './HeaderBar';
 import { Toaster } from 'react-hot-toast';
-
-const theme = {
-  colors: {
-    primary: '#3b82f6',
-    background: '#0f172a',
-    text: '#ffffff',
-  },
-};
+import { ThemeProvider } from './ThemeProvider';
+import { useState } from 'react';
+import MobileNav from './MobileNav';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   return (
-    <StyledComponentsRegistry>
-        <ThemeProvider theme={theme}>
-          <Navbar />
-          {children}
-          <Toaster position="bottom-right" />
-        </ThemeProvider>
-      </StyledComponentsRegistry>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+      <div className="flex flex-col min-h-screen">
+        <HeaderBar onBurgerClick={() => setIsMobileMenuOpen(true)} />
+        <MobileNav show={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+        <main className="flex-1 w-full">{children}</main>
+        <Toaster position="bottom-right" />
+      </div>
+    </ThemeProvider>
   );
 }

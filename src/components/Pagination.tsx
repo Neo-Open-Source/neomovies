@@ -1,45 +1,33 @@
 'use client';
 
 import React from 'react';
-import styled from 'styled-components';
-
-const PaginationContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 2rem 0;
-`;
-
-const PageButton = styled.button<{ $active?: boolean }>`
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 0.5rem;
-  background: ${props => props.$active ? props.theme.colors.primary : 'rgba(255, 255, 255, 0.1)'};
-  color: white;
-  cursor: pointer;
-  transition: background 0.2s;
-
-  &:hover {
-    background: ${props => props.$active ? props.theme.colors.primary : 'rgba(255, 255, 255, 0.2)'};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
-
-const PageInfo = styled.span`
-  color: white;
-  padding: 0 1rem;
-`;
 
 interface PaginationProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
 }
+
+const PageButton = ({ onClick, disabled, active, children }: {
+    onClick: () => void;
+    disabled?: boolean;
+    active?: boolean;
+    children: React.ReactNode;
+}) => {
+    const baseClasses = 'px-3 py-1 rounded-md text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+    const activeClasses = 'bg-accent text-white';
+    const inactiveClasses = 'bg-card hover:bg-card/80 text-foreground';
+
+    return (
+        <button
+            onClick={onClick}
+            disabled={disabled}
+            className={`${baseClasses} ${active ? activeClasses : inactiveClasses}`}
+        >
+            {children}
+        </button>
+    );
+};
 
 export default function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
   const maxVisiblePages = 5;
@@ -57,7 +45,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
   };
 
   const handlePageClick = (page: number) => {
-    if (page !== currentPage) {
+    if (page !== currentPage && page > 0 && page <= totalPages) {
       onPageChange(page);
     }
   };
@@ -65,7 +53,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
   if (totalPages <= 1) return null;
 
   return (
-    <PaginationContainer>
+    <div className="flex items-center justify-center gap-2 my-8 text-foreground">
       <PageButton
         onClick={() => handlePageClick(1)}
         disabled={currentPage === 1}
@@ -82,7 +70,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
       {getPageNumbers().map(page => (
         <PageButton
           key={page}
-          $active={page === currentPage}
+          active={page === currentPage}
           onClick={() => handlePageClick(page)}
         >
           {page}
@@ -101,6 +89,6 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
       >
         »
       </PageButton>
-    </PaginationContainer>
+    </div>
   );
 }

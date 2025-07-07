@@ -1,76 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import styled from 'styled-components';
 import { categoriesAPI } from '@/lib/api';
 import { Category } from '@/lib/api';
 import CategoryCard from '@/components/CategoryCard';
 
-// Styled Components
-const Container = styled.div`
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-`;
-
-const Grid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1.5rem;
-  margin-top: 2rem;
-  
-  @media (max-width: 640px) {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  }
-`;
-
-const Title = styled.h1`
-  font-size: 2rem;
-  font-weight: bold;
-  margin-bottom: 1.5rem;
-  color: #fff;
-`;
-
-const Subtitle = styled.p`
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 1rem;
-  margin-top: -0.5rem;
-  margin-bottom: 2rem;
-`;
-
-const LoadingContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 300px;
-`;
-
-const Spinner = styled.div`
-  width: 40px;
-  height: 40px;
-  border: 4px solid rgba(255, 255, 255, 0.1);
-  border-left-color: #3182ce;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-`;
-
-const ErrorMessage = styled.div`
-  color: #fc8181;
-  text-align: center;
-  padding: 2rem;
-  background: rgba(252, 129, 129, 0.1);
-  border-radius: 0.5rem;
-  margin: 2rem 0;
-`;
-
 interface CategoryWithBackground extends Category {
-  backgroundUrl?: string;
+  backgroundUrl?: string | null;
 }
 
 function CategoriesPage() {
@@ -151,34 +87,44 @@ function CategoriesPage() {
 
   if (error) {
     return (
-      <Container>
-        <Title>Категории</Title>
-        <ErrorMessage>{error}</ErrorMessage>
-      </Container>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <h1 className="text-4xl font-bold text-foreground mb-4">Категории</h1>
+          <div className="text-red-500 text-center p-4 bg-red-50 dark:bg-red-900/50 rounded-lg">
+            {error}
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Container>
-      <Title>Категории</Title>
-      <Subtitle>Различные жанры фильмов и сериалов</Subtitle>
-      
-      {loading ? (
-        <LoadingContainer>
-          <Spinner />
-        </LoadingContainer>
-      ) : (
-        <Grid>
-          {categories.map((category) => (
-            <CategoryCard 
-              key={category.id} 
-              category={category} 
-              backgroundUrl={category.backgroundUrl}
-            />
-          ))}
-        </Grid>
-      )}
-    </Container>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-foreground mb-4">Категории</h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400">
+            Выберите категорию для просмотра фильмов
+          </p>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-accent"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {categories.map((category, index) => (
+              <CategoryCard
+                key={index}
+                category={category}
+                backgroundUrl={category.backgroundUrl}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

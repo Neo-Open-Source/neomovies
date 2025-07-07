@@ -1,6 +1,7 @@
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { ClientLayout } from '@/components/ClientLayout';
+import { Providers } from '@/components/Providers';
 import type { Metadata } from 'next';
 import { Analytics } from "@vercel/analytics/react";
 import { TermsChecker } from './providers/terms-check';
@@ -23,7 +24,9 @@ export default function RootLayout({
         <meta name="darkreader-lock" />
       </head>
       <body className={inter.className} suppressHydrationWarning>
-        <ClientLayout>{children}</ClientLayout>
+        <Providers>
+            <ClientLayout>{children}</ClientLayout>
+          </Providers>
 	<TermsChecker />
 	<Analytics />
       </body>

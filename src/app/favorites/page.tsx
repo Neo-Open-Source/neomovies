@@ -1,82 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import styled from 'styled-components';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { favoritesAPI } from '@/lib/favoritesApi';
 import { getImageUrl } from '@/lib/neoApi';
-
-const Container = styled.div`
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-`;
-
-const Title = styled.h1`
-  font-size: 2rem;
-  color: white;
-  margin-bottom: 2rem;
-`;
-
-const Grid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 2rem;
-`;
-
-const Card = styled(Link)`
-  position: relative;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  transition: transform 0.2s;
-  text-decoration: none;
-
-  &:hover {
-    transform: translateY(-5px);
-  }
-`;
-
-const Poster = styled.div`
-  position: relative;
-  width: 100%;
-  aspect-ratio: 2/3;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 0.5rem;
-  overflow: hidden;
-
-  img {
-    object-fit: cover;
-  }
-`;
-
-const Info = styled.div`
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 1rem;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
-`;
-
-const MediaTitle = styled.h2`
-  font-size: 1rem;
-  color: white;
-  margin: 0;
-`;
-
-const MediaType = styled.span`
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.7);
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  color: rgba(255, 255, 255, 0.7);
-  padding: 4rem 0;
-`;
+import { Loader2, HeartCrack } from 'lucide-react';
 
 interface Favorite {
   id: number;
@@ -104,7 +34,6 @@ export default function FavoritesPage() {
         setFavorites(response.data);
       } catch (error) {
         console.error('Failed to fetch favorites:', error);
-        // If token is invalid, clear it and redirect to login
         localStorage.removeItem('token');
         localStorage.removeItem('userName');
         localStorage.removeItem('userEmail');
@@ -119,52 +48,73 @@ export default function FavoritesPage() {
 
   if (loading) {
     return (
-      <Container>
-        <Title>Избранное</Title>
-        <EmptyState>Загрузка...</EmptyState>
-      </Container>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-16 w-16 animate-spin text-accent" />
+      </div>
     );
   }
 
-  
-
   if (favorites.length === 0) {
     return (
-      <Container>
-        <Title>Избранное</Title>
-        <EmptyState>
-          У вас пока нет избранных фильмов и сериалов
-        </EmptyState>
-      </Container>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <HeartCrack size={80} className="mx-auto mb-6 text-gray-400" />
+          <h1 className="text-3xl font-bold text-foreground mb-4">Избранное пусто</h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
+            У вас пока нет избранных фильмов и сериалов
+          </p>
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center px-6 py-3 text-base font-medium text-white bg-accent rounded-lg hover:bg-accent/90 transition-colors"
+          >
+            Найти фильмы
+          </Link>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Container>
-      <Title>Избранное</Title>
-      <Grid>
-        {favorites.map(favorite => (
-          <Card
-            key={`${favorite.mediaType}-${favorite.mediaId}`}
-            href={`/${favorite.mediaType === 'movie' ? 'movie' : 'tv'}/${favorite.mediaId}`}
-          >
-            <Poster>
-              <Image
-                src={favorite.posterPath ? getImageUrl(favorite.posterPath) : '/images/placeholder.jpg'}
-                alt={favorite.title}
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                className="object-cover"
-                unoptimized
-              />
-            </Poster>
-            <Info>
-              <MediaTitle>{favorite.title}</MediaTitle>
-              <MediaType>{favorite.mediaType === 'movie' ? 'Фильм' : 'Сериал'}</MediaType>
-            </Info>
-          </Card>
-        ))}
-      </Grid>
-    </Container>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-foreground mb-4">Избранное</h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400">
+            Ваша коллекция любимых фильмов и сериалов
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+          {favorites.map(favorite => (
+            <Link
+              key={`${favorite.mediaType}-${favorite.mediaId}`}
+              href={`/${favorite.mediaType === 'movie' ? 'movie' : 'tv'}/${favorite.mediaId}`}
+              className="group"
+            >
+              <div className="overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800 shadow-sm transition-all duration-300 group-hover:shadow-lg group-hover:-translate-y-1">
+                <div className="relative aspect-[2/3] w-full">
+                  <Image
+                    src={favorite.posterPath ? getImageUrl(favorite.posterPath) : '/images/placeholder.jpg'}
+                    alt={favorite.title}
+                    fill
+                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+              </div>
+              <div className="mt-3 px-1">
+                <h3 className="font-semibold text-base text-foreground truncate group-hover:text-accent transition-colors">
+                  {favorite.title}
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  {favorite.mediaType === 'movie' ? 'Фильм' : 'Сериал'}
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

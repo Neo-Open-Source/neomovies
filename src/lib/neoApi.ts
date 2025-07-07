@@ -159,6 +159,22 @@ export const moviesAPI = {
     });
   },
 
+  // Получение фильмов с высоким рейтингом
+  getTopRated(page = 1) {
+    return neoApi.get<MovieResponse>('/movies/top_rated', {
+      params: { page },
+      timeout: 30000
+    });
+  },
+
+  // Получение новинок
+  getNowPlaying(page = 1) {
+    return neoApi.get<MovieResponse>('/movies/now_playing', {
+      params: { page },
+      timeout: 30000
+    });
+  },
+
   // Получение данных о фильме по его ID
   getMovie(id: string | number) {
     return neoApi.get(`/movies/${id}`, { timeout: 30000 });

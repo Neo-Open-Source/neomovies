@@ -2,21 +2,21 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { moviesAPI } from '@/lib/neoApi';
+import { tvAPI } from '@/lib/api';
 import { getImageUrl } from '@/lib/neoApi';
-import type { MovieDetails } from '@/lib/api';
+import type { TVShowDetails } from '@/lib/api';
 import MoviePlayer from '@/components/MoviePlayer';
 import FavoriteButton from '@/components/FavoriteButton';
 import { formatDate } from '@/lib/utils';
 import { PlayCircle, ArrowLeft } from 'lucide-react';
 
-interface MovieContentProps {
-  movieId: string;
-  initialMovie: MovieDetails;
+interface TVContentProps {
+  showId: string;
+  initialShow: TVShowDetails;
 }
 
-export default function MovieContent({ movieId, initialMovie }: MovieContentProps) {
-  const [movie] = useState<MovieDetails>(initialMovie);
+export default function TVContent({ showId, initialShow }: TVContentProps) {
+  const [show] = useState<TVShowDetails>(initialShow);
   const [imdbId, setImdbId] = useState<string | null>(null);
   const [isPlayerFullscreen, setIsPlayerFullscreen] = useState(false);
   const [isControlsVisible, setIsControlsVisible] = useState(false);
@@ -25,7 +25,8 @@ export default function MovieContent({ movieId, initialMovie }: MovieContentProp
   useEffect(() => {
     const fetchImdbId = async () => {
       try {
-        const { data } = await moviesAPI.getMovie(movieId);
+        // Используем dedicated эндпоинт для получения IMDb ID
+        const { data } = await tvAPI.getImdbId(showId);
         if (data?.imdb_id) {
           setImdbId(data.imdb_id);
         }
@@ -33,8 +34,14 @@ export default function MovieContent({ movieId, initialMovie }: MovieContentProp
         console.error('Error fetching IMDb ID:', err);
       }
     };
-    fetchImdbId();
-  }, [movieId]);
+
+    // Проверяем, есть ли ID в initialShow, чтобы избежать лишнего запроса
+    if (initialShow.external_ids?.imdb_id) {
+      setImdbId(initialShow.external_ids.imdb_id);
+    } else {
+      fetchImdbId();
+    }
+  }, [showId, initialShow.external_ids]);
 
   const showControls = () => {
     if (controlsTimeoutRef.current) {
@@ -63,13 +70,12 @@ export default function MovieContent({ movieId, initialMovie }: MovieContentProp
       <div className="min-h-screen bg-background text-foreground px-4 py-6 md:px-6 lg:px-8">
         <div className="w-full">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-            {/* Left Column: Poster */}
             <div className="md:col-span-1">
               <div className="sticky top-24 max-w-sm mx-auto md:max-w-none md:mx-0">
                 <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg shadow-lg">
                   <Image
-                    src={getImageUrl(movie.poster_path, 'w500')}
-                    alt={`Постер фильма ${movie.title}`}
+                    src={getImageUrl(show.poster_path, 'w500')}
+                    alt={`Постер сериала ${show.name}`}
                     fill
                     className="object-cover"
                     unoptimized
@@ -78,25 +84,24 @@ export default function MovieContent({ movieId, initialMovie }: MovieContentProp
               </div>
             </div>
 
-            {/* Middle Column: Details */}
             <div className="md:col-span-2">
               <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                {movie.title}
+                {show.name}
               </h1>
-              {movie.tagline && (
-                <p className="mt-1 text-lg text-muted-foreground">{movie.tagline}</p>
+              {show.tagline && (
+                <p className="mt-1 text-lg text-muted-foreground">{show.tagline}</p>
               )}
 
               <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-                <span className="font-medium">Рейтинг: {movie.vote_average.toFixed(1)}</span>
+                <span className="font-medium">Рейтинг: {show.vote_average.toFixed(1)}</span>
                 <span className="text-muted-foreground">|</span>
-                <span className="text-muted-foreground">{movie.runtime} мин.</span>
+                <span className="text-muted-foreground">Сезонов: {show.number_of_seasons}</span>
                 <span className="text-muted-foreground">|</span>
-                <span className="text-muted-foreground">{formatDate(movie.release_date)}</span>
+                <span className="text-muted-foreground">{formatDate(show.first_air_date)}</span>
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                {movie.genres.map((genre) => (
+                {show.genres.map((genre) => (
                   <span key={genre.id} className="rounded-full bg-secondary text-secondary-foreground px-3 py-1 text-xs font-medium">
                     {genre.name}
                   </span>
@@ -104,11 +109,10 @@ export default function MovieContent({ movieId, initialMovie }: MovieContentProp
               </div>
 
               <div className="mt-6 space-y-4 text-base text-muted-foreground">
-                <p>{movie.overview}</p>
+                <p>{show.overview}</p>
               </div>
 
               <div className="mt-8 flex items-center gap-4">
-                {/* Mobile-only Watch Button */}
                 {imdbId && (
                   <button
                     onClick={handleOpenPlayer}
@@ -119,21 +123,20 @@ export default function MovieContent({ movieId, initialMovie }: MovieContentProp
                   </button>
                 )}
                 <FavoriteButton
-                  mediaId={movie.id.toString()}
-                  mediaType="movie"
-                  title={movie.title}
-                  posterPath={movie.poster_path}
+                  mediaId={show.id.toString()}
+                  mediaType="tv"
+                  title={show.name}
+                  posterPath={show.poster_path}
                   className="!bg-secondary !text-secondary-foreground hover:!bg-secondary/80"
                 />
               </div>
 
-              {/* Desktop-only Embedded Player */}
               {imdbId && (
                 <div id="movie-player" className="mt-10 hidden md:block rounded-lg bg-secondary/50 p-4 shadow-inner">
                    <MoviePlayer
-                    id={movie.id.toString()}
-                    title={movie.title}
-                    poster={movie.poster_path || ''}
+                    id={show.id.toString()}
+                    title={show.name}
+                    poster={show.poster_path || ''}
                     imdbId={imdbId}
                   />
                 </div>
@@ -143,7 +146,6 @@ export default function MovieContent({ movieId, initialMovie }: MovieContentProp
         </div>
       </div>
       
-      {/* Fullscreen Player for Mobile */}
       {isPlayerFullscreen && imdbId && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center bg-black"
@@ -151,10 +153,11 @@ export default function MovieContent({ movieId, initialMovie }: MovieContentProp
           onClick={showControls}
         >
           <MoviePlayer
-            id={movie.id.toString()}
-            title={movie.title}
-            poster={movie.poster_path || ''}
+            id={show.id.toString()}
+            title={show.name}
+            poster={show.poster_path || ''}
             imdbId={imdbId}
+            isFullscreen={true}
           />
           <button
             onClick={handleClosePlayer}
@@ -167,4 +170,4 @@ export default function MovieContent({ movieId, initialMovie }: MovieContentProp
       )}
     </>
   );
-}
+} 

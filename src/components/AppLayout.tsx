@@ -1,29 +1,19 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import styled from 'styled-components';
 import { ReactNode } from 'react';
-import Navbar from './Navbar';
 
-const Layout = styled.div<{ $hasNavbar: boolean }>`
-  min-height: 100vh;
-  display: flex;
-  background: #0E0E0E;
-`;
+const Layout = ({ children }: { children: ReactNode }) => (
+  <div className="min-h-screen flex bg-gray-900 text-white">
+    {children}
+  </div>
+);
 
-const Main = styled.main<{ $hasNavbar: boolean }>`
-  flex: 1;
-  padding: 20px;
-
-  ${props => props.$hasNavbar && `
-    @media (max-width: 768px) {
-      margin-top: 60px;
-    }
-    @media (min-width: 769px) {
-      margin-left: 240px;
-    }
-  `}
-`;
+const Main = ({ children }: { children: ReactNode }) => (
+  <main className="flex-1 p-4 md:p-6 lg:p-8">
+    {children}
+  </main>
+);
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -31,12 +21,15 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname();
-  const hideNavbar = pathname === '/login' || pathname === '/404' || pathname.startsWith('/verify');
+  const hideLayout = pathname === '/login' || pathname === '/404' || pathname.startsWith('/verify');
+
+  if (hideLayout) {
+    return <>{children}</>;
+  }
 
   return (
-    <Layout $hasNavbar={!hideNavbar}>
-      {!hideNavbar && <Navbar />}
-      <Main $hasNavbar={!hideNavbar}>{children}</Main>
+    <Layout>
+      <Main>{children}</Main>
     </Layout>
   );
 }

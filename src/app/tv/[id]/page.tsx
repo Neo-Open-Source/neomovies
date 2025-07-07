@@ -1,53 +1,46 @@
 import { Metadata } from 'next';
-import TVShowPage from './TVShowPage';
+import { tvAPI } from '@/lib/api';
+import TVPage from '@/app/tv/[id]/TVPage';
 
 export const dynamic = 'force-dynamic';
-import { tvShowsAPI } from '@/lib/neoApi';
 
 interface PageProps {
   params: {
     id: string;
   };
-  searchParams: { [key: string]: string | string[] | undefined };
 }
 
-// Generate SEO metadata
-export async function generateMetadata(
-  props: { params: { id: string } }
-): Promise<Metadata> {
+// Генерация метаданных для страницы
+export async function generateMetadata(props: Promise<PageProps>): Promise<Metadata> {
+  const { params } = await props;
   try {
-    const showId = props.params.id;
-    const { data: show } = await tvShowsAPI.getTVShow(showId);
+    const showId = params.id;
+    const { data: show } = await tvAPI.getShow(showId);
+    
     return {
       title: `${show.name} - NeoMovies`,
       description: show.overview,
     };
   } catch (error) {
-    console.error('Error generating TV metadata', error);
+    console.error('Error generating metadata:', error);
     return {
       title: 'Сериал - NeoMovies',
     };
   }
 }
 
+// Получение данных для страницы
 async function getData(id: string) {
   try {
-    const response = await tvShowsAPI.getTVShow(id).then(res => res.data);
-    return { id, show: response };
+    const { data: show } = await tvAPI.getShow(id);
+    return { id, show };
   } catch (error) {
-    console.error('Error fetching show:', error);
-    return { id, show: null };
+    throw new Error('Failed to fetch TV show');
   }
 }
 
-export default async function Page(props: PageProps) {
-  // В Next.js 14 нужно сначала использовать параметры в асинхронной функции
-  try {
-    const tvShowId = props.params.id;
-    const data = await getData(tvShowId);
-    return <TVShowPage tvShowId={data.id} show={data.show} />;
-  } catch (error) {
-    console.error('Error loading TV show page:', error);
-    return <div>Ошибка загрузки страницы сериала</div>;
-  }
+export default async function Page({ params }: PageProps) {
+  const { id } = params;
+  const data = await getData(id);
+  return <TVPage showId={data.id} show={data.show} />;
 }

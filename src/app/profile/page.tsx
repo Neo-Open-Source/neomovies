@@ -1,73 +1,9 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
-import styled from 'styled-components';
-import GlassCard from '@/components/GlassCard';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-
-const Container = styled.div`
-  min-height: 100vh;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-top: 80px;
-  background-color: #0a0a0a;
-`;
-
-const Content = styled.div`
-  width: 100%;
-  max-width: 600px;
-  padding: 2rem;
-`;
-
-const ProfileHeader = styled.div`
-  text-align: center;
-  margin-bottom: 2rem;
-`;
-
-const Avatar = styled.div`
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: #2196f3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 3rem;
-  font-weight: bold;
-  margin: 0 auto 1rem;
-  border: 4px solid #fff;
-`;
-
-const Name = styled.h1`
-  color: #fff;
-  font-size: 2rem;
-  margin: 0;
-`;
-
-const Email = styled.p`
-  color: rgba(255, 255, 255, 0.7);
-  margin: 0.5rem 0 0;
-`;
-
-const SignOutButton = styled.button`
-  background: #ff4444;
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.2s;
-  margin-top: 1rem;
-
-  &:hover {
-    background: #ff2020;
-  }
-`;
+import { Loader2, LogOut } from 'lucide-react';
 
 export default function ProfilePage() {
   const { logout } = useAuth();
@@ -93,34 +29,38 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <Container>
-        <Content>
-          <GlassCard>
-            <div>Загрузка...</div>
-          </GlassCard>
-        </Content>
-      </Container>
+      <div className="flex min-h-screen w-full items-center justify-center bg-[#F9F6EE] dark:bg-gray-900">
+        <Loader2 className="h-16 w-16 animate-spin text-red-500" />
+      </div>
     );
   }
 
   if (!userName) {
+    // This can happen briefly before redirect, or if localStorage is cleared.
     return null;
   }
 
   return (
-    <Container>
-      <Content>
-        <GlassCard>
-          <ProfileHeader>
-            <Avatar>
+    <div className="min-h-screen w-full bg-[#F9F6EE] dark:bg-[#1e1e1e] pt-24 sm:pt-32">
+      <div className="flex justify-center px-4">
+        <div className="w-full max-w-md rounded-2xl bg-white dark:bg-[#49372E] p-8 shadow-lg">
+          <div className="flex flex-col items-center text-center">
+            <div className="mb-6 flex h-28 w-28 items-center justify-center rounded-full bg-gray-200 dark:bg-white/10 text-4xl font-bold text-gray-700 dark:text-gray-200 ring-4 ring-gray-100 dark:ring-white/5">
               {userName?.split(' ').map(n => n[0]).join('').toUpperCase() || ''}
-            </Avatar>
-            <Name>{userName}</Name>
-            <Email>{userEmail}</Email>
-            <SignOutButton onClick={handleSignOut}>Выйти</SignOutButton>
-          </ProfileHeader>
-        </GlassCard>
-      </Content>
-    </Container>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{userName}</h1>
+            <p className="mt-2 text-base text-gray-500 dark:text-gray-300">{userEmail}</p>
+            <button
+              onClick={handleSignOut}
+              className="mt-8 inline-flex items-center gap-2.5 rounded-lg bg-red-600 px-6 py-3 text-base font-semibold text-white shadow-md transition-colors hover:bg-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+            >
+              <LogOut size={20} />
+              <span>Выйти</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
+

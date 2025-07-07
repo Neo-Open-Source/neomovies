@@ -2,51 +2,46 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { moviesAPI } from '@/lib/neoApi';
-import type { Movie } from '@/lib/neoApi';
+import type { Movie, MovieResponse } from '@/lib/neoApi';
 
-export function useMovies(initialPage = 1) {
+export type MovieCategory = 'popular' | 'top_rated' | 'now_playing';
+
+interface UseMoviesProps {
+  initialPage?: number;
+  category?: MovieCategory;
+}
+
+export function useMovies({ initialPage = 1, category = 'popular' }: UseMoviesProps) {
   const [movies, setMovies] = useState<Movie[]>([]);
-  const [featuredMovie, setFeaturedMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(initialPage);
   const [totalPages, setTotalPages] = useState(0);
 
-  // Получаем featured фильм всегда с первой страницы
-  const fetchFeaturedMovie = useCallback(async () => {
-    try {
-      const response = await moviesAPI.getPopular(1);
-      if (response.data.results.length > 0) {
-        const firstMovie = response.data.results[0];
-        if (firstMovie.id) {
-          const movieDetails = await moviesAPI.getMovie(firstMovie.id);
-          setFeaturedMovie(movieDetails.data);
-        }
-      }
-    } catch (err) {
-      console.error('Ошибка при загрузке featured фильма:', err);
-    }
-  }, []);
-
-  // Загружаем фильмы для текущей страницы
-  const fetchMovies = useCallback(async (pageNum: number) => {
+  const fetchMovies = useCallback(async (pageNum: number, movieCategory: MovieCategory) => {
     try {
       setLoading(true);
       setError(null);
-      setMovies([]); // Очищаем текущие фильмы перед загрузкой новых
 
-      console.log('Загрузка страницы:', pageNum);
-      const response = await moviesAPI.getPopular(pageNum);
-      console.log('Получены данные:', {
-        page: response.data.page,
-        results: response.data.results.length,
-        totalPages: response.data.total_pages
-      });
-      
+      let response: { data: MovieResponse };
+
+      switch (movieCategory) {
+        case 'top_rated':
+          response = await moviesAPI.getTopRated(pageNum);
+          break;
+        case 'now_playing':
+          response = await moviesAPI.getNowPlaying(pageNum);
+          break;
+        case 'popular':
+        default:
+          response = await moviesAPI.getPopular(pageNum);
+          break;
+      }
+
       setMovies(response.data.results);
-      setTotalPages(response.data.total_pages);
+      setTotalPages(response.data.total_pages > 500 ? 500 : response.data.total_pages);
     } catch (err) {
-      console.error('Ошибка при загрузке фильмов:', err);
+      console.error(`Ошибка при загрузке категории "${movieCategory}":`, err);
       setError('Произошла ошибка при загрузке фильмов');
       setMovies([]);
     } finally {
@@ -54,32 +49,27 @@ export function useMovies(initialPage = 1) {
     }
   }, []);
 
-  // Загружаем featured фильм при монтировании
   useEffect(() => {
-    fetchFeaturedMovie();
-  }, [fetchFeaturedMovie]);
+    fetchMovies(page, category);
+  }, [page, category, fetchMovies]);
 
-  // Загружаем фильмы при изменении страницы
+  // Сбрасываем страницу на 1 при смене категории
   useEffect(() => {
-    console.log('Изменение страницы на:', page);
-    fetchMovies(page);
-  }, [page, fetchMovies]);
+    setPage(1);
+  }, [category]);
 
-  // Обработчик изменения страницы
-  const handlePageChange = useCallback(async (newPage: number) => {
+  const handlePageChange = useCallback((newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
-    console.log('Смена страницы на:', newPage);
     setPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [totalPages]);
 
   return {
     movies,
-    featuredMovie,
     loading,
     error,
     totalPages,
     currentPage: page,
-    setPage: handlePageChange
+    setPage: handlePageChange,
   };
 }

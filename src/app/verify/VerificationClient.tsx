@@ -1,142 +1,54 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { authAPI } from '@/lib/authApi';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { authAPI } from '../../lib/authApi';
 
-const Container = styled.div`
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  text-align: center;
-`;
-
-const Title = styled.h2`
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #fff;
-  margin-bottom: 0.5rem;
-`;
-
-const Subtitle = styled.p`
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.875rem;
-  margin-bottom: 2rem;
-`;
-
-const CodeInput = styled.input`
-  width: 100%;
-  padding: 1rem;
-  font-size: 2rem;
-  letter-spacing: 0.5rem;
-  text-align: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  color: #fff;
-  transition: all 0.2s;
-
-  &:focus {
-    outline: none;
-    border-color: #2196f3;
-    box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.1);
-  }
-
-  &::placeholder {
-    letter-spacing: normal;
-    color: rgba(255, 255, 255, 0.3);
-  }
-`;
-
-const VerifyButton = styled.button`
-  width: 100%;
-  background: linear-gradient(to right, #2196f3, #1e88e5);
-  color: white;
-  padding: 1rem;
-  border-radius: 12px;
-  border: none;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background: linear-gradient(to right, #1e88e5, #1976d2);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const ResendButton = styled.button`
-  background: none;
-  border: none;
-  color: #2196f3;
-  font-size: 0.875rem;
-  cursor: pointer;
-  padding: 0.5rem;
-  transition: opacity 0.2s;
-
-  &:hover {
-    opacity: 0.8;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
-
-const ErrorMessage = styled.div`
-  color: #f44336;
-  font-size: 0.875rem;
-  margin-top: 0.5rem;
-`;
-
-export function VerificationClient({ email }: { email: string }) {
+export default function VerificationClient() {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
+  const [countdown, setCountdown] = useState(60);
   const [isLoading, setIsLoading] = useState(false);
-  const [countdown, setCountdown] = useState(0);
+  const [isResending, setIsResending] = useState(false);
   const router = useRouter();
-  const { verifyCode, login } = useAuth();
   const searchParams = useSearchParams();
+  const email = searchParams.get('email');
+  const { verifyCode, login } = useAuth();
 
   useEffect(() => {
+    if (!email) {
+      router.replace('/login');
+      return;
+    }
+
     let timer: NodeJS.Timeout;
     if (countdown > 0) {
       timer = setInterval(() => {
         setCountdown((prev) => prev - 1);
       }, 1000);
     }
+
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [countdown]);
+  }, [countdown, email, router]);
 
-  const handleVerify = async () => {
-    if (code.length !== 6) {
-      setError('Код должен состоять из 6 цифр');
-      return;
-    }
-
-    setIsLoading(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError('');
+    setIsLoading(true);
 
     try {
+      const password = localStorage.getItem('password');
+      if (!password || !email) {
+        throw new Error('Не удалось получить данные для входа');
+      }
+
       await verifyCode(code);
+      await login(email, password);
+      localStorage.removeItem('password');
+      router.replace('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Произошла ошибка');
     } finally {
@@ -144,54 +56,71 @@ export function VerificationClient({ email }: { email: string }) {
     }
   };
 
-  const handleResend = async () => {
+  const handleResendCode = async () => {
+    if (countdown > 0 || !email) return;
+    
+    setError('');
+    setIsResending(true);
+    
     try {
       await authAPI.resendCode(email);
       setCountdown(60);
     } catch (err) {
-      setError('Не удалось отправить код');
+      setError(err instanceof Error ? err.message : 'Не удалось отправить код');
+    } finally {
+      setIsResending(false);
     }
   };
 
   return (
-    <Container>
-      <div>
-        <Title>Подтвердите ваш email</Title>
-        <Subtitle>Мы отправили код подтверждения на {email}</Subtitle>
-      </div>
+    <div className="w-full max-w-md bg-warm-50 dark:bg-warm-900 rounded-lg shadow-lg p-8">
+      <h2 className="text-xl font-bold text-center mb-2 text-foreground">Подтверждение email</h2>
+      <p className="text-muted-foreground text-center mb-8">
+        Мы отправили код подтверждения на {email}
+      </p>
 
-      <div>
-        <CodeInput
-          type="text"
-          maxLength={6}
-          value={code}
-          onChange={(e) => {
-            const value = e.target.value.replace(/\D/g, '');
-            setCode(value);
-            setError('');
-          }}
-          placeholder="Введите код"
-        />
-        {error && <ErrorMessage>{error}</ErrorMessage>}
-      </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <input
+            type="text"
+            placeholder="Введите код"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            maxLength={6}
+            required
+            className="w-full px-4 py-3 rounded-lg bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-warm-900 dark:text-warm-50 placeholder:text-warm-400 text-center text-lg tracking-wider"
+          />
+        </div>
 
-      <div>
-        <VerifyButton
-          onClick={handleVerify}
+        <button
+          type="submit"
           disabled={isLoading || code.length !== 6}
+          className="w-full py-3 px-4 bg-accent text-white rounded-lg font-medium hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isLoading ? 'Проверка...' : 'Подтвердить'}
-        </VerifyButton>
+        </button>
+      </form>
 
-        <ResendButton
-          onClick={handleResend}
-          disabled={countdown > 0 || isLoading}
+      {error && (
+        <div className="mt-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm">
+          {error}
+        </div>
+      )}
+
+      <div className="mt-6 text-center">
+        <button
+          type="button"
+          onClick={handleResendCode}
+          disabled={countdown > 0 || isResending}
+          className="text-accent hover:underline focus:outline-none disabled:opacity-50 disabled:no-underline text-sm"
         >
-          {countdown > 0
-            ? `Отправить код повторно (${countdown}с)`
+          {isResending
+            ? 'Отправка...'
+            : countdown > 0
+            ? `Отправить код повторно через ${countdown} сек`
             : 'Отправить код повторно'}
-        </ResendButton>
+        </button>
       </div>
-    </Container>
+    </div>
   );
 }

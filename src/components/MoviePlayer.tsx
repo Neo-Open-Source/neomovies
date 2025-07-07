@@ -1,131 +1,43 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import styled from 'styled-components';
 import { useSettings } from '@/hooks/useSettings';
 import { moviesAPI, api } from '@/lib/api';
-
-const PlayerContainer = styled.div`
-  position: relative;
-  width: 100%;
-  height: 0;
-  padding-bottom: 56.25%;
-  background: #000;
-  border-radius: 12px;
-  overflow: hidden;
-  margin-bottom: 8px;
-`;
-
-const StyledIframe = styled.iframe`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border: none;
-`;
-
-const LoadingContainer = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-`;
-
-const ErrorContainer = styled.div`
-  flex-direction: column;
-  gap: 1rem;
-  padding: 2rem;
-  text-align: center;
-`;
-
-const RetryButton = styled.button`
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 0.25rem;
-  background: #3b82f6;
-  color: white;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: background 0.2s;
-
-  &:hover {
-    background: #2563eb;
-  }
-`;
-
-const DownloadMessage = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  background: rgba(13, 37, 73, 0.8);
-  border: 1px solid rgba(33, 150, 243, 0.2);
-  border-radius: 8px;
-  color: rgba(33, 150, 243, 0.9);
-  font-size: 14px;
-  backdrop-filter: blur(10px);
-
-  svg {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-  }
-`;
+import { AlertTriangle, Info } from 'lucide-react';
 
 interface MoviePlayerProps {
   id: string;
   title: string;
   poster: string;
   imdbId?: string;
+  isFullscreen?: boolean;
 }
 
-export default function MoviePlayer({ id, title, poster, imdbId }: MoviePlayerProps) {
+export default function MoviePlayer({ id, title, poster, imdbId, isFullscreen = false }: MoviePlayerProps) {
   const { settings, isInitialized } = useSettings();
-  // containerRef removed – using direct iframe integration
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [iframeSrc, setIframeSrc] = useState<string | null>(null);
   const [resolvedImdb, setResolvedImdb] = useState<string | null>(imdbId ?? null);
 
   useEffect(() => {
-    if (isInitialized) {
-      // setCurrentPlayer(settings.defaultPlayer);
-    }
-  }, [settings.defaultPlayer, isInitialized]);
-
-  useEffect(() => {
     const fetchImdbId = async () => {
+      if (imdbId) return;
       try {
         setLoading(true);
         setError(null);
-        
-        if (!imdbId) {
-          const { data } = await moviesAPI.getMovie(id);
-          if (!data?.imdb_id) {
-            throw new Error('IMDb ID не найден');
-          }
-          setResolvedImdb(data.imdb_id);
-        }
+        const { data } = await moviesAPI.getMovie(id);
+        if (!data?.imdb_id) throw new Error('IMDb ID не найден');
+        setResolvedImdb(data.imdb_id);
       } catch (err) {
         console.error('Error fetching IMDb ID:', err);
-        setError('Не удалось загрузить плеер. Пожалуйста, попробуйте позже.');
+        setError('Не удалось получить информацию для плеера.');
       } finally {
         setLoading(false);
       }
     };
-
-    if (!resolvedImdb) {
-      fetchImdbId();
-    }
-  }, [id, resolvedImdb]);
+    fetchImdbId();
+  }, [id, imdbId]);
 
   useEffect(() => {
     const loadPlayer = async () => {
@@ -133,37 +45,17 @@ export default function MoviePlayer({ id, title, poster, imdbId }: MoviePlayerPr
       try {
         setLoading(true);
         setError(null);
-
         const basePath = settings.defaultPlayer === 'alloha' ? '/players/alloha' : '/players/lumex';
-        const queryParams = { imdb_id: resolvedImdb };
+        const { data } = await api.get(basePath, { params: { imdb_id: resolvedImdb } });
+        if (!data) throw new Error('Empty response');
 
-        try {
-          const response = await api.get(basePath, { params: queryParams });
-          if (!response.data) {
-            throw new Error('Empty response');
-          }
-
-          let src: string | null = null;
-          if (response.data.iframe) {
-            src = response.data.iframe;
-          } else if (response.data.src) {
-            src = response.data.src;
-          } else if (response.data.url) {
-            src = response.data.url;
-          } else if (typeof response.data === 'string') {
-            const match = response.data.match(/<iframe[^>]*src="([^"]+)"/i);
-            if (match && match[1]) src = match[1];
-          }
-          if (!src) {
-            throw new Error('Invalid response format');
-          }
-          setIframeSrc(src);
-        } catch (err) {
-          console.error(err);
-          setError('Не удалось загрузить плеер. Попробуйте позже.');
-        } finally {
-          setLoading(false);
+        let src: string | null = data.iframe || data.src || data.url || null;
+        if (!src && typeof data === 'string') {
+          const match = data.match(/<iframe[^>]*src="([^"]+)"/i);
+          if (match && match[1]) src = match[1];
         }
+        if (!src) throw new Error('Invalid response format');
+        setIframeSrc(src);
       } catch (err) {
         console.error(err);
         setError('Не удалось загрузить плеер. Попробуйте позже.');
@@ -171,44 +63,66 @@ export default function MoviePlayer({ id, title, poster, imdbId }: MoviePlayerPr
         setLoading(false);
       }
     };
-
     loadPlayer();
-  }, [id, resolvedImdb, isInitialized, settings.defaultPlayer]);
+  }, [resolvedImdb, isInitialized, settings.defaultPlayer]);
 
   const handleRetry = () => {
-    setLoading(true);
     setError(null);
-    
-    setLoading(false);
+    if (!resolvedImdb) {
+      // Re-fetch IMDb ID
+      const event = new Event('fetchImdb');
+      window.dispatchEvent(event);
+    } else {
+      // Re-load player
+      const event = new Event('loadPlayer');
+      window.dispatchEvent(event);
+    }
   };
 
   if (error) {
     return (
-      <ErrorContainer>
-        <div>{error}</div>
-        <RetryButton onClick={handleRetry}>Попробовать снова</RetryButton>
-      </ErrorContainer>
+      <div className="flex flex-col items-center justify-center gap-4 rounded-lg bg-red-100 p-6 text-center text-red-700">
+        <AlertTriangle size={32} />
+        <p>{error}</p>
+        <button
+          onClick={handleRetry}
+          className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+        >
+          Попробовать снова
+        </button>
+      </div>
     );
   }
 
-  return (
-    <>
-      <PlayerContainer>
-        {iframeSrc ? (
-          <StyledIframe src={iframeSrc} allow="fullscreen" loading="lazy" />
-        ) : (
-          loading && <LoadingContainer>Загрузка плеера...</LoadingContainer>
-        )}
-      </PlayerContainer>
-      {settings.defaultPlayer !== 'lumex' && (
-        <DownloadMessage>
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Для возможности скачивания фильма выберите плеер Lumex в настройках
-        </DownloadMessage>
-      )}
+  const rootClasses = isFullscreen ? 'w-full h-full' : '';
+  const playerContainerClasses = isFullscreen
+    ? 'relative w-full h-full bg-black'
+    : 'relative w-full overflow-hidden rounded-lg bg-black pt-[56.25%]';
 
-    </>
+  return (
+    <div className={rootClasses}>
+      <div className={playerContainerClasses}>
+        {iframeSrc ? (
+          <iframe
+            src={iframeSrc}
+            allow="fullscreen"
+            loading="lazy"
+            className="absolute left-0 top-0 h-full w-full border-0"
+          />
+        ) : (
+          loading && (
+            <div className="absolute left-0 top-0 flex h-full w-full items-center justify-center text-warm-300">
+              Загрузка плеера...
+            </div>
+          )
+        )}
+      </div>
+      {settings.defaultPlayer !== 'lumex' && !isFullscreen && (
+        <div className="mt-3 flex items-center gap-2 rounded-md bg-blue-100 p-3 text-sm text-blue-800">
+          <Info size={20} />
+          <span>Для возможности скачивания фильма выберите плеер Lumex в настройках.</span>
+        </div>
+      )}
+    </div>
   );
 }

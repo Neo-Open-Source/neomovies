@@ -1,33 +1,8 @@
 import { useState, useEffect } from 'react';
 import { favoritesAPI } from '@/lib/favoritesApi';
 import { Heart } from 'lucide-react';
-import styled from 'styled-components';
 import { toast } from 'react-hot-toast';
-
-const Button = styled.button<{ $isFavorite: boolean }>`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  background: ${props => props.$isFavorite ? 'rgba(255, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)'};
-  border: none;
-  color: ${props => props.$isFavorite ? '#ff4444' : '#fff'};
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background: ${props => props.$isFavorite ? 'rgba(255, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.2)'};
-  }
-
-  svg {
-    width: 1.2rem;
-    height: 1.2rem;
-    fill: ${props => props.$isFavorite ? '#ff4444' : 'none'};
-    stroke: ${props => props.$isFavorite ? '#ff4444' : '#fff'};
-    transition: all 0.2s;
-  }
-`;
+import cn from 'classnames';
 
 interface FavoriteButtonProps {
   mediaId: string | number;
@@ -41,13 +16,11 @@ export default function FavoriteButton({ mediaId, mediaType, title, posterPath, 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // Преобразуем mediaId в строку для сравнения
   const mediaIdString = mediaId.toString();
 
   useEffect(() => {
     const checkFavorite = async () => {
       if (!token) return;
-
       try {
         const { data } = await favoritesAPI.checkFavorite(mediaIdString);
         setIsFavorite(!!data.isFavorite);
@@ -55,7 +28,6 @@ export default function FavoriteButton({ mediaId, mediaType, title, posterPath, 
         console.error('Error checking favorite status:', error);
       }
     };
-
     checkFavorite();
   }, [token, mediaIdString]);
 
@@ -86,10 +58,19 @@ export default function FavoriteButton({ mediaId, mediaType, title, posterPath, 
     }
   };
 
+  const buttonClasses = cn(
+    'flex items-center gap-2 rounded-md px-4 py-3 text-base font-semibold shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
+    {
+      'bg-red-100 text-red-700 hover:bg-red-200 focus-visible:outline-red-600': isFavorite,
+      'bg-warm-200 text-warm-800 hover:bg-warm-300 focus-visible:outline-warm-400': !isFavorite,
+    },
+    className
+  );
+
   return (
-    <Button type="button" onClick={toggleFavorite} $isFavorite={isFavorite} className={className}>
-      <Heart />
-      {isFavorite ? 'В избранном' : 'В избранное'}
-    </Button>
+    <button type="button" onClick={toggleFavorite} className={buttonClasses}>
+      <Heart size={20} className={cn({ 'fill-current': isFavorite })} />
+      <span>{isFavorite ? 'В избранном' : 'В избранное'}</span>
+    </button>
   );
 }
