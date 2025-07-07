@@ -10,6 +10,11 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState<MovieCategory>('popular');
   const { movies, loading, error, totalPages, currentPage, setPage } = useMovies({ category: activeTab });
 
+  const handleTabClick = (tab: MovieCategory) => {
+    setActiveTab(tab);
+    setPage(1);
+  };
+
   if (loading && !movies.length) {
     return (
       <div className="flex min-h-[calc(100vh-128px)] items-center justify-center text-gray-500 dark:text-gray-400">
@@ -34,7 +39,7 @@ export default function HomePage() {
         <div className="border-b border-gray-200 dark:border-gray-700">
           <nav className="-mb-px flex space-x-8" aria-label="Tabs">
             <button
-              onClick={() => setActiveTab('popular')}
+              onClick={() => { setActiveTab('popular'); setPage(1); }}
               className={`${ 
                 activeTab === 'popular'
                   ? 'border-red-500 text-red-600'
@@ -75,11 +80,13 @@ export default function HomePage() {
         </div>
 
         <div className="mt-8 flex justify-center">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setPage}
-          />
+          {activeTab === 'popular' && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
+          )}
         </div>
       </div>
     </main>
