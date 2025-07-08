@@ -5,7 +5,7 @@ import { authAPI } from '@/lib/authApi';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Loader2, User, LogOut, Trash2 } from 'lucide-react';
+import { Loader2, User, LogOut, Trash2, ArrowLeft } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 
 export default function ProfilePage() {
@@ -51,6 +51,15 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen w-full bg-background text-foreground flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        <div className="mb-6">
+          <button 
+            onClick={() => router.back()}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft size={20} />
+            <span>Назад</span>
+          </button>
+        </div>
         <div className="bg-warm-50 dark:bg-warm-900 rounded-lg shadow-lg p-8 text-center mb-6">
           <div className="mb-6 mx-auto flex h-28 w-28 items-center justify-center rounded-full bg-gray-200 dark:bg-white/10 text-4xl font-bold text-gray-700 dark:text-gray-200 ring-4 ring-gray-100 dark:ring-white/5">
             {userName?.split(' ').map(n => n[0]).join('').toUpperCase() || ''}
