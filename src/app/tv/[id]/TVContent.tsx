@@ -7,6 +7,7 @@ import { getImageUrl } from '@/lib/neoApi';
 import type { TVShowDetails } from '@/lib/api';
 import MoviePlayer from '@/components/MoviePlayer';
 import FavoriteButton from '@/components/FavoriteButton';
+import Reactions from '@/components/Reactions';
 import { formatDate } from '@/lib/utils';
 import { PlayCircle, ArrowLeft } from 'lucide-react';
 
@@ -130,6 +131,10 @@ export default function TVContent({ showId, initialShow }: TVContentProps) {
                   className="!bg-secondary !text-secondary-foreground hover:!bg-secondary/80"
                   showText={true}
                 />
+              </div>
+
+              <div className="mt-8">
+                <Reactions mediaId={show.id.toString()} mediaType="tv" />
               </div>
 
               {imdbId && (

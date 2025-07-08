@@ -1,13 +1,30 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import HeaderBar from './HeaderBar';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from './ThemeProvider';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import MobileNav from './MobileNav';
+
+interface CustomWindow extends Window {
+  dataLayer?: any[];
+}
+
+declare const window: CustomWindow;
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (window.dataLayer) {
+      window.dataLayer.push({
+        event: 'pageview',
+        page: pathname,
+      });
+    }
+  }, [pathname]);
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>

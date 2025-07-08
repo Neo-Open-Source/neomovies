@@ -12,5 +12,8 @@ export const authAPI = {
   },
   login(email: string, password: string) {
     return api.post('/auth/login', { email, password });
+  },
+  deleteAccount() {
+    return api.delete('/auth/profile');
   }
 };

@@ -7,6 +7,7 @@ import { getImageUrl } from '@/lib/neoApi';
 import type { MovieDetails } from '@/lib/api';
 import MoviePlayer from '@/components/MoviePlayer';
 import FavoriteButton from '@/components/FavoriteButton';
+import Reactions from '@/components/Reactions';
 import { formatDate } from '@/lib/utils';
 import { PlayCircle, ArrowLeft } from 'lucide-react';
 
@@ -126,6 +127,10 @@ export default function MovieContent({ movieId, initialMovie }: MovieContentProp
                   className="!bg-secondary !text-secondary-foreground hover:!bg-secondary/80"
                   showText={true}
                 />
+              </div>
+
+              <div className="mt-8">
+                <Reactions mediaId={movie.id.toString()} mediaType="movie" />
               </div>
 
               {/* Desktop-only Embedded Player */}

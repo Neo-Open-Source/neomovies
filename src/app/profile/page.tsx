@@ -1,9 +1,12 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
+import { authAPI } from '@/lib/authApi';
+import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Loader2, User, LogOut, Trash2 } from 'lucide-react';
+import Modal from '@/components/ui/Modal';
 
 export default function ProfilePage() {
   const { logout } = useAuth();
@@ -11,6 +14,7 @@ export default function ProfilePage() {
   const [userName, setUserName] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -23,9 +27,17 @@ export default function ProfilePage() {
     }
   }, [router]);
 
-  const handleDeleteAccount = () => {
-    // TODO: Implement account deletion logic
-    alert('Функция удаления аккаунта в разработке.');
+  const handleConfirmDelete = async () => {
+    try {
+      await authAPI.deleteAccount();
+      toast.success('Аккаунт успешно удален.');
+      setIsModalOpen(false);
+      logout();
+    } catch (error) {
+      console.error('Failed to delete account:', error);
+      toast.error('Не удалось удалить аккаунт. Попробуйте снова.');
+      setIsModalOpen(false);
+    }
   };
 
   if (loading) {
@@ -62,7 +74,7 @@ export default function ProfilePage() {
             <h2 className="text-xl font-bold text-red-500 mb-4">Опасная зона</h2>
             <p className="text-red-400 mb-6">Это действие нельзя будет отменить. Все ваши данные, включая избранное, будут удалены.</p>
             <button
-              onClick={handleDeleteAccount}
+              onClick={() => setIsModalOpen(true)}
               className="w-full sm:w-auto px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 flex items-center justify-center gap-2"
             >
               <Trash2 size={20} />
@@ -70,6 +82,14 @@ export default function ProfilePage() {
           </button>
         </div>
       </div>
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onConfirm={handleConfirmDelete}
+        title="Подтвердите удаление аккаунта"
+      >
+        <p>Вы уверены, что хотите навсегда удалить свой аккаунт? Все ваши данные, включая избранное и реакции, будут безвозвратно удалены. Это действие нельзя будет отменить.</p>
+      </Modal>
     </div>
   );
 }
