@@ -31,7 +31,6 @@ export default function LoginClient() {
         await login(email, password);
       } else {
         await register(email, password, name);
-        localStorage.setItem('password', password);
         router.push(`/verify?email=${encodeURIComponent(email)}`);
       }
     } catch (err) {

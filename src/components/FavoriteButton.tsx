@@ -10,9 +10,10 @@ interface FavoriteButtonProps {
   title: string;
   posterPath: string | null;
   className?: string;
+  showText?: boolean;
 }
 
-export default function FavoriteButton({ mediaId, mediaType, title, posterPath, className }: FavoriteButtonProps) {
+export default function FavoriteButton({ mediaId, mediaType, title, posterPath, className, showText = false }: FavoriteButtonProps) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const [isFavorite, setIsFavorite] = useState(false);
 
@@ -23,7 +24,7 @@ export default function FavoriteButton({ mediaId, mediaType, title, posterPath, 
       if (!token) return;
       try {
         const { data } = await favoritesAPI.checkFavorite(mediaIdString);
-        setIsFavorite(!!data.isFavorite);
+        setIsFavorite(!!data.exists);
       } catch (error) {
         console.error('Error checking favorite status:', error);
       }
@@ -59,10 +60,12 @@ export default function FavoriteButton({ mediaId, mediaType, title, posterPath, 
   };
 
   const buttonClasses = cn(
-    'flex items-center gap-2 rounded-md px-4 py-3 text-base font-semibold shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
+    'flex items-center justify-center font-semibold shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
     {
+      'rounded-full p-3 text-base': !showText,
+      'gap-2 rounded-md px-4 py-3 text-base': showText,
       'bg-red-100 text-red-700 hover:bg-red-200 focus-visible:outline-red-600': isFavorite,
-      'bg-warm-200 text-warm-800 hover:bg-warm-300 focus-visible:outline-warm-400': !isFavorite,
+      'bg-warm-200/80 text-warm-800 hover:bg-warm-300/90 backdrop-blur-sm': !isFavorite,
     },
     className
   );
@@ -70,7 +73,7 @@ export default function FavoriteButton({ mediaId, mediaType, title, posterPath, 
   return (
     <button type="button" onClick={toggleFavorite} className={buttonClasses}>
       <Heart size={20} className={cn({ 'fill-current': isFavorite })} />
-      <span>{isFavorite ? 'В избранном' : 'В избранное'}</span>
+      {showText && <span>{isFavorite ? 'В избранном' : 'В избранное'}</span>}
     </button>
   );
 }

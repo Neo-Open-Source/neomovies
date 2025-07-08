@@ -1,108 +1,50 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { useSettings } from '@/hooks/useSettings';
-import styled from 'styled-components';
-import { useRouter } from 'next/navigation';
-
-const Container = styled.div`
-  width: 100%;
-  max-width: 800px;
-  padding: 0 1rem;
-`;
-
-const Title = styled.h1`
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: 2rem;
-  color: white;
-`;
-
-const PlayersList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  width: 100%;
-`;
-
-const PlayerCard = styled.div<{ $isSelected: boolean }>`
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: 2px solid ${props => props.$isSelected ? '#2196f3' : 'transparent'};
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.15);
-  }
-`;
-
-const PlayerName = styled.h2`
-  font-size: 1.125rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: white;
-`;
-
-const PlayerDescription = styled.p`
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.875rem;
-`;
-
-const SaveButton = styled.button`
-  margin-top: 1rem;
-  padding: 0.75rem 1.5rem;
-  background: #2196f3;
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s;
-
-  &:hover {
-    background: #1976d2;
-  }
-`;
 
 export default function SettingsContent() {
   const { settings, updateSettings } = useSettings();
-  const router = useRouter();
-
+  
   const players = [
     {
       id: 'alloha',
       name: 'Alloha',
-      description: 'Основной плеер с высоким качеством',
+      description: 'Основной плеер с высоким качеством и быстрой загрузкой.',
     },
     {
       id: 'lumex',
       name: 'Lumex',
-      description: 'Плеер с возможностью скачивания фильмов',
+      description: 'Альтернативный плеер, может быть полезен при проблемах с основным.',
     },
   ];
 
   const handlePlayerSelect = (playerId: string) => {
     updateSettings({ defaultPlayer: playerId as 'alloha' | 'lumex' });
-    // Возвращаемся на предыдущую страницу
-    window.history.back();
   };
 
   return (
-    <Container>
-      <Title>Настройки плеера</Title>
-      <PlayersList>
-        {players.map((player) => (
-          <PlayerCard
-            key={player.id}
-            $isSelected={settings.defaultPlayer === player.id}
-            onClick={() => handlePlayerSelect(player.id)}
-          >
-            <PlayerName>{player.name}</PlayerName>
-            <PlayerDescription>{player.description}</PlayerDescription>
-          </PlayerCard>
-        ))}
-      </PlayersList>
-    </Container>
+    <div className="w-full max-w-2xl">
+      <div className="bg-warm-50 dark:bg-warm-900 rounded-lg shadow-lg p-6 sm:p-8">
+        <h2 className="text-xl font-bold text-foreground mb-4">Настройки плеера</h2>
+        <p className="text-muted-foreground mb-6">Выберите плеер, который будет использоваться по умолчанию для просмотра.</p>
+        <div className="space-y-4">
+          {players.map((player) => (
+            <div
+              key={player.id}
+              onClick={() => handlePlayerSelect(player.id)}
+              className={`rounded-lg p-4 cursor-pointer border-2 transition-all ${
+                settings.defaultPlayer === player.id
+                  ? 'border-accent bg-accent/10'
+                  : 'border-warm-200 dark:border-warm-700 bg-white dark:bg-warm-800 hover:border-accent/50'
+              }`}
+            >
+              <h3 className="font-semibold text-foreground">{player.name}</h3>
+              <p className="text-sm text-muted-foreground">{player.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

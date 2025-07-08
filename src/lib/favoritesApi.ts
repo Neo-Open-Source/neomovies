@@ -9,7 +9,8 @@ export const favoritesAPI = {
 
   // Добавить в избранное
   addFavorite(data: { mediaId: string; mediaType: 'movie' | 'tv', title: string, posterPath: string }) {
-    return api.post(`/favorites`, data);
+    const { mediaId, mediaType, title, posterPath } = data;
+    return api.post(`/favorites/${mediaId}?mediaType=${mediaType}`, { title, posterPath });
   },
 
   // Удалить из избранного

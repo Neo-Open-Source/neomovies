@@ -8,7 +8,7 @@ export const authAPI = {
     return api.post('/auth/resend-code', { email });
   },
   verify(email: string, code: string) {
-    return api.put('/auth/verify', { email, code });
+    return api.post('/auth/verify', { email, code });
   },
   login(email: string, password: string) {
     return api.post('/auth/login', { email, password });

@@ -128,6 +128,7 @@ export default function TVContent({ showId, initialShow }: TVContentProps) {
                   title={show.name}
                   posterPath={show.poster_path}
                   className="!bg-secondary !text-secondary-foreground hover:!bg-secondary/80"
+                  showText={true}
                 />
               </div>
 

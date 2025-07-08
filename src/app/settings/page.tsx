@@ -1,12 +1,11 @@
 'use client';
 
 import SettingsContent from '@/components/SettingsContent';
-import PageLayout from '@/components/PageLayout';
 
 export default function SettingsPage() {
   return (
-    <PageLayout>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background text-foreground">
       <SettingsContent />
-    </PageLayout>
+    </div>
   );
 }

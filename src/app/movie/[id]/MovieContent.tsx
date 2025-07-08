@@ -124,6 +124,7 @@ export default function MovieContent({ movieId, initialMovie }: MovieContentProp
                   title={movie.title}
                   posterPath={movie.poster_path}
                   className="!bg-secondary !text-secondary-foreground hover:!bg-secondary/80"
+                  showText={true}
                 />
               </div>
 

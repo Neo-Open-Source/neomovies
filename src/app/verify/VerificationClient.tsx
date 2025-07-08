@@ -40,14 +40,10 @@ export default function VerificationClient() {
     setIsLoading(true);
 
     try {
-      const password = localStorage.getItem('password');
-      if (!password || !email) {
-        throw new Error('Не удалось получить данные для входа');
+      if (!email) {
+        throw new Error('Не удалось получить email для подтверждения');
       }
-
       await verifyCode(code);
-      await login(email, password);
-      localStorage.removeItem('password');
       router.replace('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Произошла ошибка');

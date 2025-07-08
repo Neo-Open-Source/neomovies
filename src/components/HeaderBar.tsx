@@ -85,16 +85,14 @@ export default function HeaderBar({ onBurgerClick }: { onBurgerClick?: () => voi
 
           <div className="flex items-center space-x-4">
             <ThemeToggleButton />
+            <Link href="/settings" className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+              <Settings size={20} className="text-gray-800 dark:text-gray-300 hover:text-accent-orange" />
+            </Link>
             {userName ? (
-              <div className="flex items-center space-x-2">
-                <Link href="/settings" className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                  <Settings size={20} className="text-gray-800 dark:text-gray-300 hover:text-accent-orange" />
-                </Link>
-                <Link href="/profile" className="flex items-center space-x-2 p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                  <User size={20} className="text-gray-800 dark:text-gray-300" />
-                  <span className="text-sm font-medium hidden sm:block text-gray-800 dark:text-white">{userName}</span>
-                </Link>
-              </div>
+              <Link href="/profile" className="flex items-center space-x-2 p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                <User size={20} className="text-gray-800 dark:text-gray-300" />
+                <span className="text-sm font-medium hidden sm:block text-gray-800 dark:text-white">{userName}</span>
+              </Link>
             ) : (
               <Link href="/login" className="text-sm font-medium p-2 rounded-md bg-red-600 hover:bg-red-700 text-white transition-colors">
                 Вход

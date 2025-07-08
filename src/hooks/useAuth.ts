@@ -21,7 +21,6 @@ export function useAuth() {
       localStorage.setItem('token', data.token);
 
       // Extract name/email either from API response or JWT payload
-      // Пытаемся достать имя/почту из JWT либо из ответа
       let name: string | undefined = undefined;
       let email: string | undefined = undefined;
       try {
@@ -31,14 +30,12 @@ export function useAuth() {
       } catch {
         // silent
       }
-      // fallback к полям ответа
       if (!name) name = data.user?.name || data.name || data.userName;
       if (!email) email = data.user?.email || data.email;
 
       if (name) localStorage.setItem('userName', name);
       if (email) localStorage.setItem('userEmail', email);
 
-      // уведомляем другие компоненты о смене авторизации
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new Event('auth-changed'));
       }
@@ -52,16 +49,34 @@ export function useAuth() {
 
   const register = async (email: string, password: string, name: string) => {
     await authAPI.register({ email, password, name });
-    await authAPI.resendCode(email);
+    const pendingData = { email, password, name };
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pendingVerification', JSON.stringify(pendingData));
+    }
     setIsVerifying(true);
-    setPending({ email, password, name });
+    setPending(pendingData);
   };
 
   const verifyCode = async (code: string) => {
-    if (!pending) throw new Error('no pending');
-    await authAPI.verify(pending.email, code);
-    // auto login
-    await login(pending.email, pending.password);
+    let pendingData = pending;
+    if (!pendingData && typeof window !== 'undefined') {
+      const storedPending = localStorage.getItem('pendingVerification');
+      if (storedPending) {
+        pendingData = JSON.parse(storedPending);
+        setPending(pendingData);
+      }
+    }
+
+    if (!pendingData) {
+      throw new Error('Сессия подтверждения истекла. Пожалуйста, попробуйте зарегистрироваться снова.');
+    }
+    
+    await authAPI.verify(pendingData.email, code);
+    await login(pendingData.email, pendingData.password);
+    
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('pendingVerification');
+    }
     setIsVerifying(false);
     setPending(null);
   };

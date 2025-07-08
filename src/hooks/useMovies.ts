@@ -53,11 +53,6 @@ export function useMovies({ initialPage = 1, category = 'popular' }: UseMoviesPr
     fetchMovies(page, category);
   }, [page, category, fetchMovies]);
 
-  // Сбрасываем страницу на 1 при смене категории
-  useEffect(() => {
-    setPage(1);
-  }, [category]);
-
   const handlePageChange = useCallback((newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
     setPage(newPage);
