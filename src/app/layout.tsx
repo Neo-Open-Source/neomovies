@@ -1,8 +1,6 @@
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
-import { DefaultSeo } from 'next-seo';
-import SEO from '@/next-seo.config';
 import { ClientLayout } from '@/components/ClientLayout';
 import { Providers } from '@/components/Providers';
 import type { Metadata } from 'next';
@@ -66,8 +64,7 @@ export default function RootLayout({
           ></iframe>
         </noscript>
         {/* End Google Tag Manager (noscript) */}
-        <DefaultSeo {...SEO} />
-        <Providers>
+                <Providers>
             <ClientLayout>{children}</ClientLayout>
           </Providers>
 	<TermsChecker />
