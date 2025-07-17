@@ -6,6 +6,7 @@ import { tvAPI } from '@/lib/api';
 import { getImageUrl } from '@/lib/neoApi';
 import type { TVShowDetails } from '@/lib/api';
 import MoviePlayer from '@/components/MoviePlayer';
+import TorrentSelector from '@/components/TorrentSelector';
 import FavoriteButton from '@/components/FavoriteButton';
 import Reactions from '@/components/Reactions';
 import { formatDate } from '@/lib/utils';
@@ -144,6 +145,11 @@ export default function TVContent({ showId, initialShow }: TVContentProps) {
                     title={show.name}
                     poster={show.poster_path || ''}
                     imdbId={imdbId}
+                  />
+                  <TorrentSelector
+                    imdbId={imdbId}
+                    type="tv"
+                    totalSeasons={show.number_of_seasons}
                   />
                 </div>
               )}

@@ -6,6 +6,7 @@ import { moviesAPI } from '@/lib/neoApi';
 import { getImageUrl } from '@/lib/neoApi';
 import type { MovieDetails } from '@/lib/api';
 import MoviePlayer from '@/components/MoviePlayer';
+import TorrentSelector from '@/components/TorrentSelector';
 import FavoriteButton from '@/components/FavoriteButton';
 import Reactions from '@/components/Reactions';
 import { formatDate } from '@/lib/utils';
@@ -141,6 +142,10 @@ export default function MovieContent({ movieId, initialMovie }: MovieContentProp
                     title={movie.title}
                     poster={movie.poster_path || ''}
                     imdbId={imdbId}
+                  />
+                  <TorrentSelector 
+                    imdbId={imdbId}
+                    type="movie"
                   />
                 </div>
               )}

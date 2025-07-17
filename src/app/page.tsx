@@ -81,11 +81,11 @@ export default function HomePage() {
 
         <div className="mt-8 flex justify-center">
           {activeTab === 'popular' && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setPage}
-            />
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
           )}
         </div>
       </div>
