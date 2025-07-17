@@ -136,18 +136,20 @@ export default function MovieContent({ movieId, initialMovie }: MovieContentProp
 
               {/* Desktop-only Embedded Player */}
               {imdbId && (
-                <div id="movie-player" className="mt-10 hidden md:block rounded-lg bg-secondary/50 p-4 shadow-inner">
+                <div className="mt-10 space-y-4">
+                <div id="movie-player" className="hidden md:block rounded-lg bg-secondary/50 p-4 shadow-inner">
                    <MoviePlayer
                     id={movie.id.toString()}
                     title={movie.title}
                     poster={movie.poster_path || ''}
                     imdbId={imdbId}
                   />
-                  <TorrentSelector 
+                  </div>
+                <TorrentSelector 
                     imdbId={imdbId}
                     type="movie"
                   />
-                </div>
+              </div>
               )}
             </div>
           </div>

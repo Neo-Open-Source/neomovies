@@ -139,14 +139,16 @@ export default function TVContent({ showId, initialShow }: TVContentProps) {
               </div>
 
               {imdbId && (
-                <div id="movie-player" className="mt-10 hidden md:block rounded-lg bg-secondary/50 p-4 shadow-inner">
+                <div className="mt-10 space-y-4">
+                <div id="movie-player" className="hidden md:block rounded-lg bg-secondary/50 p-4 shadow-inner">
                    <MoviePlayer
                     id={show.id.toString()}
                     title={show.name}
                     poster={show.poster_path || ''}
                     imdbId={imdbId}
                   />
-                  <TorrentSelector
+                  </div>
+                <TorrentSelector
                     imdbId={imdbId}
                     type="tv"
                     totalSeasons={show.number_of_seasons}
