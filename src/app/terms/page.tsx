@@ -31,7 +31,7 @@ export default function Terms() {
           
           <section>
             <h2 className="text-xl font-semibold text-foreground">1. Общие положения</h2>
-            <p>Использование сайта NeoMovies (<a href="https://neo-movies.vercel.app" target="_blank" className="text-accent hover:underline">https://neo-movies.vercel.app</a>) возможно только при полном согласии с условиями настоящего Пользовательского соглашения. Несогласие с любыми положениями соглашения означает, что вы не имеете права использовать данный сайт и должны прекратить доступ к нему.</p>
+            <p>Использование сайта NeoMovies (<a href="https://neo-movies.vercel.app" target="_blank" className="text-accent hover:underline">https://neo-movies.vercel.app</a>), (<a href="https://neomovies.ru" target="_blank" className="text-accent hover:underline">https://neomovies.ru</a>)  возможно только при полном согласии с условиями настоящего Пользовательского соглашения. Несогласие с любыми положениями соглашения означает, что вы не имеете права использовать данный сайт и должны прекратить доступ к нему.</p>
           </section>
 
           <section>
