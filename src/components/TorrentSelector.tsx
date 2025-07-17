@@ -138,14 +138,22 @@ export default function TorrentSelector({ imdbId, type, totalSeasons }: TorrentS
       return (
         <Button
           key={torrent.magnet}
+          asChild
           onClick={() => handleQualitySelect(torrent)}
           variant="outline"
           className="w-full items-center text-left px-3 py-2"
         >
-          <span className="flex-1 truncate whitespace-nowrap overflow-hidden">{label}</span>
-          {size !== undefined && (
-            <span className="text-xs text-muted-foreground">{size.toFixed(2)} GB</span>
-          )}
+          <a
+            href={torrent.magnet}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex w-full items-center"
+          >
+            <span className="flex-1 truncate whitespace-nowrap overflow-hidden">{label}</span>
+            {size !== undefined && (
+              <span className="text-xs text-muted-foreground">{size.toFixed(2)} GB</span>
+            )}
+          </a>
         </Button>
       );
     });
