@@ -11,6 +11,7 @@ import FavoriteButton from '@/components/FavoriteButton';
 import Reactions from '@/components/Reactions';
 import { formatDate } from '@/lib/utils';
 import { PlayCircle, ArrowLeft } from 'lucide-react';
+import { NextSeo } from 'next-seo';
 
 interface TVContentProps {
   showId: string;
@@ -69,6 +70,39 @@ export default function TVContent({ showId, initialShow }: TVContentProps) {
 
   return (
     <>
+      <NextSeo
+        title={`${show.name} смотреть онлайн`}
+        description={show.overview?.slice(0, 150)}
+        canonical={`https://neomovies.ru/tv/${show.id}`}
+        openGraph={{
+          url: `https://neomovies.ru/tv/${show.id}`,
+          images: [
+            {
+              url: getImageUrl(show.poster_path, 'w780'),
+              alt: show.name,
+            },
+          ],
+        }}
+      />
+      {/* schema.org TVSeries */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'TVSeries',
+            name: show.name,
+            image: getImageUrl(show.poster_path, 'w780'),
+            description: show.overview,
+            numberOfSeasons: show.number_of_seasons,
+            aggregateRating: {
+              '@type': 'AggregateRating',
+              ratingValue: show.vote_average,
+              ratingCount: show.vote_count,
+            },
+          }),
+        }}
+      />
       <div className="min-h-screen bg-background text-foreground px-4 py-6 md:px-6 lg:px-8">
         <div className="w-full">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">

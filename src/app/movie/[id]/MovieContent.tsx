@@ -11,6 +11,7 @@ import FavoriteButton from '@/components/FavoriteButton';
 import Reactions from '@/components/Reactions';
 import { formatDate } from '@/lib/utils';
 import { PlayCircle, ArrowLeft } from 'lucide-react';
+import { NextSeo } from 'next-seo';
 
 interface MovieContentProps {
   movieId: string;
@@ -62,6 +63,39 @@ export default function MovieContent({ movieId, initialMovie }: MovieContentProp
 
   return (
     <>
+      <NextSeo
+        title={`${movie.title} смотреть онлайн`}
+        description={movie.overview?.slice(0, 150)}
+        canonical={`https://neomovies.ru/movie/${movie.id}`}
+        openGraph={{
+          url: `https://neomovies.ru/movie/${movie.id}`,
+          images: [
+            {
+              url: getImageUrl(movie.poster_path, 'w780'),
+              alt: movie.title,
+            },
+          ],
+        }}
+      />
+      {/* schema.org Movie */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Movie',
+            name: movie.title,
+            image: getImageUrl(movie.poster_path, 'w780'),
+            description: movie.overview,
+            datePublished: movie.release_date,
+            aggregateRating: {
+              '@type': 'AggregateRating',
+              ratingValue: movie.vote_average,
+              ratingCount: movie.vote_count,
+            },
+          }),
+        }}
+      />
       <div className="min-h-screen bg-background text-foreground px-4 py-6 md:px-6 lg:px-8">
         <div className="w-full">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">

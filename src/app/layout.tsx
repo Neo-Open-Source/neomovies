@@ -1,6 +1,8 @@
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
+import { DefaultSeo } from 'next-seo';
+import SEO from '@/next-seo.config';
 import { ClientLayout } from '@/components/ClientLayout';
 import { Providers } from '@/components/Providers';
 import type { Metadata } from 'next';
@@ -23,6 +25,9 @@ export default function RootLayout({
     <html lang="ru">
       <head>
         <meta name="darkreader-lock" />
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/public/logo.png" />
+        <link rel="manifest" href="/manifest.json" />
         
         {/* Google tag (gtag.js) */}
         <Script
@@ -61,6 +66,7 @@ export default function RootLayout({
           ></iframe>
         </noscript>
         {/* End Google Tag Manager (noscript) */}
+        <DefaultSeo {...SEO} />
         <Providers>
             <ClientLayout>{children}</ClientLayout>
           </Providers>
