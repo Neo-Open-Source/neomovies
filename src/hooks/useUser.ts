@@ -17,8 +17,7 @@ export function useUser() {
 
   const login = async (email: string, password: string) => {
     try {
-      // Сначала проверяем, верифицирован ли аккаунт
-      const verificationCheck = await fetch('/api/auth/check-verification', {
+      const verificationCheck = await fetch('/api/v1/auth/check-verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -27,8 +26,7 @@ export function useUser() {
       const { isVerified } = await verificationCheck.json();
 
       if (!isVerified) {
-        // Если аккаунт не верифицирован, отправляем новый код и переходим к верификации
-        const verificationResponse = await fetch('/api/auth/verify', {
+        const verificationResponse = await fetch('/api/v1/auth/verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })
@@ -43,15 +41,28 @@ export function useUser() {
         return;
       }
 
-      // Если аккаунт верифицирован, выполняем вход
-      const result = await signIn('credentials', {
-        redirect: false,
-        email,
-        password,
+      const loginResponse = await fetch('/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
       });
 
-      if (result?.error) {
-        throw new Error(result.error);
+      if (!loginResponse.ok) {
+        const data = await loginResponse.json();
+        throw new Error(data.error || 'Неверный email или пароль');
+      }
+
+      const loginData = await loginResponse.json();
+      const { token, user } = loginData.data || loginData;
+
+      if (token) {
+        localStorage.setItem('token', token);
+        if (user?.name) localStorage.setItem('userName', user.name);
+        if (user?.email) localStorage.setItem('userEmail', user.email);
+        
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('auth-changed'));
+        }
       }
 
       router.push('/');
@@ -62,7 +73,7 @@ export function useUser() {
 
   const register = async (email: string, password: string, name: string) => {
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch('/api/v1/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, name }),
@@ -73,8 +84,7 @@ export function useUser() {
         throw new Error(data.error || 'Ошибка при регистрации');
       }
 
-      // Отправляем код подтверждения
-      const verificationResponse = await fetch('/api/auth/verify', {
+      const verificationResponse = await fetch('/api/v1/auth/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -98,7 +108,7 @@ export function useUser() {
     }
 
     try {
-      const response = await fetch('/api/auth/verify', {
+      const response = await fetch('/api/v1/auth/verify', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -112,15 +122,31 @@ export function useUser() {
         throw new Error(data.error || 'Неверный код подтверждения');
       }
 
-      // После успешной верификации выполняем вход
-      const result = await signIn('credentials', {
-        redirect: false,
-        email: pendingRegistration.email,
-        password: pendingRegistration.password,
+      const loginResponse = await fetch('/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: pendingRegistration.email, 
+          password: pendingRegistration.password 
+        })
       });
 
-      if (result?.error) {
-        throw new Error(result.error);
+      if (!loginResponse.ok) {
+        const data = await loginResponse.json();
+        throw new Error(data.error || 'Ошибка входа после верификации');
+      }
+
+      const loginData = await loginResponse.json();
+      const { token, user } = loginData.data || loginData;
+
+      if (token) {
+        localStorage.setItem('token', token);
+        if (user?.name) localStorage.setItem('userName', user.name);
+        if (user?.email) localStorage.setItem('userEmail', user.email);
+        
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('auth-changed'));
+        }
       }
 
       setIsVerifying(false);
@@ -132,7 +158,15 @@ export function useUser() {
   };
 
   const logout = () => {
-    signOut({ callbackUrl: '/login' });
+    localStorage.removeItem('token');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
+    
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('auth-changed'));
+    }
+    
+    router.push('/login');
   };
 
   return {

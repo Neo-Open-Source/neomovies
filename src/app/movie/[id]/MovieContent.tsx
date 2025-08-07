@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { moviesAPI } from '@/lib/neoApi';
 import { getImageUrl } from '@/lib/neoApi';
-import type { MovieDetails } from '@/lib/api';
+import type { MovieDetails } from '@/lib/neoApi';
 import MoviePlayer from '@/components/MoviePlayer';
 import TorrentSelector from '@/components/TorrentSelector';
 import FavoriteButton from '@/components/FavoriteButton';
@@ -20,23 +20,25 @@ interface MovieContentProps {
 
 export default function MovieContent({ movieId, initialMovie }: MovieContentProps) {
   const [movie] = useState<MovieDetails>(initialMovie);
+  const [externalIds, setExternalIds] = useState<any>(null);
   const [imdbId, setImdbId] = useState<string | null>(null);
   const [isPlayerFullscreen, setIsPlayerFullscreen] = useState(false);
   const [isControlsVisible, setIsControlsVisible] = useState(false);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const fetchImdbId = async () => {
+    const fetchExternalIds = async () => {
       try {
-        const { data } = await moviesAPI.getMovie(movieId);
+        const data = await moviesAPI.getExternalIds(movieId);
+        setExternalIds(data);
         if (data?.imdb_id) {
           setImdbId(data.imdb_id);
         }
       } catch (err) {
-        console.error('Error fetching IMDb ID:', err);
+        console.error('Error fetching external ids:', err);
       }
     };
-    fetchImdbId();
+    fetchExternalIds();
   }, [movieId]);
 
   const showControls = () => {
@@ -182,6 +184,9 @@ export default function MovieContent({ movieId, initialMovie }: MovieContentProp
                 <TorrentSelector 
                     imdbId={imdbId}
                     type="movie"
+                    title={movie.title}
+                    originalTitle={movie.original_title}
+                    year={movie.release_date?.split('-')[0]}
                   />
               </div>
               )}

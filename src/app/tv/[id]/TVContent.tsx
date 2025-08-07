@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { tvAPI } from '@/lib/api';
+import { tvShowsAPI } from '@/lib/neoApi';
 import { getImageUrl } from '@/lib/neoApi';
-import type { TVShowDetails } from '@/lib/api';
+import type { TVShowDetails } from '@/lib/neoApi';
 import MoviePlayer from '@/components/MoviePlayer';
 import TorrentSelector from '@/components/TorrentSelector';
 import FavoriteButton from '@/components/FavoriteButton';
@@ -20,29 +20,28 @@ interface TVContentProps {
 
 export default function TVContent({ showId, initialShow }: TVContentProps) {
   const [show] = useState<TVShowDetails>(initialShow);
+  const [externalIds, setExternalIds] = useState<any>(null);
   const [imdbId, setImdbId] = useState<string | null>(null);
   const [isPlayerFullscreen, setIsPlayerFullscreen] = useState(false);
   const [isControlsVisible, setIsControlsVisible] = useState(false);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const fetchImdbId = async () => {
+    const fetchExternalIds = async () => {
       try {
-        // Используем dedicated эндпоинт для получения IMDb ID
-        const { data } = await tvAPI.getImdbId(showId);
+        const data = await tvShowsAPI.getExternalIds(showId);
+        setExternalIds(data);
         if (data?.imdb_id) {
           setImdbId(data.imdb_id);
         }
       } catch (err) {
-        console.error('Error fetching IMDb ID:', err);
+        console.error('Error fetching external ids:', err);
       }
     };
-
-    // Проверяем, есть ли ID в initialShow, чтобы избежать лишнего запроса
     if (initialShow.external_ids?.imdb_id) {
       setImdbId(initialShow.external_ids.imdb_id);
     } else {
-      fetchImdbId();
+      fetchExternalIds();
     }
   }, [showId, initialShow.external_ids]);
 
@@ -185,7 +184,9 @@ export default function TVContent({ showId, initialShow }: TVContentProps) {
                 <TorrentSelector
                     imdbId={imdbId}
                     type="tv"
-                    totalSeasons={show.number_of_seasons}
+                    title={show.name}
+                    originalTitle={show.original_name}
+                    year={show.first_air_date?.split('-')[0]}
                   />
                 </div>
               )}

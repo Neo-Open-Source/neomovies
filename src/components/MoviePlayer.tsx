@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSettings } from '@/hooks/useSettings';
-import { moviesAPI, api } from '@/lib/api';
+import { moviesAPI } from '@/lib/neoApi';
 import { AlertTriangle, Info } from 'lucide-react';
 
 interface MoviePlayerProps {
@@ -22,7 +22,10 @@ export default function MoviePlayer({ id, title, poster, imdbId, isFullscreen = 
 
   useEffect(() => {
     const fetchImdbId = async () => {
-      if (imdbId) return;
+      if (imdbId) {
+        setResolvedImdb(imdbId);
+        return;
+      }
       try {
         setLoading(true);
         setError(null);
@@ -40,42 +43,43 @@ export default function MoviePlayer({ id, title, poster, imdbId, isFullscreen = 
   }, [id, imdbId]);
 
   useEffect(() => {
-    const loadPlayer = async () => {
-      if (!isInitialized || !resolvedImdb) return;
-      try {
-        setLoading(true);
-        setError(null);
-        const basePath = settings.defaultPlayer === 'alloha' ? '/players/alloha' : '/players/lumex';
-        const { data } = await api.get(basePath, { params: { imdb_id: resolvedImdb } });
-        if (!data) throw new Error('Empty response');
+    if (!isInitialized || !resolvedImdb) return;
 
-        let src: string | null = data.iframe || data.src || data.url || null;
-        if (!src && typeof data === 'string') {
-          const match = data.match(/<iframe[^>]*src="([^"]+)"/i);
-          if (match && match[1]) src = match[1];
-        }
-        if (!src) throw new Error('Invalid response format');
-        setIframeSrc(src);
-      } catch (err) {
-        console.error(err);
-        setError('Не удалось загрузить плеер. Попробуйте позже.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadPlayer();
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+    if (!API_BASE_URL) {
+      setError('Переменная окружения NEXT_PUBLIC_API_URL не задана.');
+      return;
+    }
+
+    const playerEndpoint = settings.defaultPlayer === 'alloha' ? '/api/v1/players/alloha' : '/api/v1/players/lumex';
+    
+    // Формируем URL, где imdbId является частью пути
+    const newIframeSrc = `${API_BASE_URL}${playerEndpoint}/${resolvedImdb}`;
+    
+    setIframeSrc(newIframeSrc);
+    setLoading(false);
   }, [resolvedImdb, isInitialized, settings.defaultPlayer]);
 
   const handleRetry = () => {
     setError(null);
     if (!resolvedImdb) {
-      // Re-fetch IMDb ID
       const event = new Event('fetchImdb');
       window.dispatchEvent(event);
     } else {
-      // Re-load player
-      const event = new Event('loadPlayer');
-      window.dispatchEvent(event);
+      setIframeSrc(null);
+      setLoading(true);
+      
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+      if (!API_BASE_URL) {
+        setError('Переменная окружения NEXT_PUBLIC_API_URL не задана.');
+        setLoading(false);
+        return;
+      }
+
+      const playerEndpoint = settings.defaultPlayer === 'alloha' ? '/api/v1/players/alloha' : '/api/v1/players/lumex';
+      const newIframeSrc = `${API_BASE_URL}${playerEndpoint}/${resolvedImdb}`;
+      setIframeSrc(newIframeSrc);
+      setLoading(false);
     }
   };
 
