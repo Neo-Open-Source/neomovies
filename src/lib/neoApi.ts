@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://neomovies-test-api.vercel.app';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.neomovies.ru';
 
 // Создание экземпляра Axios с базовыми настройками
 export const neoApi = axios.create({
@@ -15,7 +15,14 @@ export const neoApi = axios.create({
 neoApi.interceptors.request.use(
   (config) => {
     // Получение токена из localStorage или другого хранилища
-    const token = localStorage.getItem('token');
+    let token: string | null = null;
+    if (typeof window !== 'undefined') {
+      try {
+        token = localStorage.getItem('token');
+      } catch {
+        token = null;
+      }
+    }
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
