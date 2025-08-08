@@ -40,6 +40,11 @@ export default function LoginClient() {
     }
   };
 
+  const handleGoogle = () => {
+    const base = process.env.NEXT_PUBLIC_API_URL || 'https://api.neomovies.ru';
+    window.location.href = `${base}/api/v1/auth/google/login`;
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <div className="w-full max-w-md bg-warm-50 dark:bg-warm-900 rounded-lg shadow-lg p-8">
@@ -99,6 +104,7 @@ export default function LoginClient() {
 
         <button
           type="button"
+          onClick={handleGoogle}
           className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-warm-200 dark:border-warm-700 rounded-lg bg-white dark:bg-warm-800 hover:bg-warm-100 dark:hover:bg-warm-700 text-warm-900 dark:text-warm-50 transition-colors"
         >
           <Image src="/google.svg" alt="Google" width={20} height={20} />
