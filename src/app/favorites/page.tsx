@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { favoritesAPI } from '@/lib/favoritesApi';
-import { getImageUrl } from '@/lib/neoApi';
+import { neoApi, getImageUrl } from '@/lib/neoApi';
 import { Loader2, HeartCrack } from 'lucide-react';
 
 interface Favorite {
@@ -25,19 +24,22 @@ export default function FavoritesPage() {
     const fetchFavorites = async () => {
       const token = localStorage.getItem('token');
       if (!token) {
-        router.push('/login');
+        router.replace('/login');
         return;
       }
 
       try {
-        const response = await favoritesAPI.getFavorites();
+        const response = await neoApi.get('/api/v1/favorites');
         setFavorites(response.data);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to fetch favorites:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('userName');
-        localStorage.removeItem('userEmail');
-        router.push('/login');
+        // Редиректим только при явном 401
+        if (error?.response?.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('userName');
+          localStorage.removeItem('userEmail');
+          router.replace('/login');
+        }
       } finally {
         setLoading(false);
       }
