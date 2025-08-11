@@ -51,7 +51,20 @@ export default function MoviePlayer({ id, title, poster, imdbId, isFullscreen = 
       return;
     }
 
-    const playerEndpoint = settings.defaultPlayer === 'alloha' ? '/api/v1/players/alloha' : '/api/v1/players/lumex';
+    const getPlayerEndpoint = (player: string) => {
+      switch (player) {
+        case 'alloha':
+          return '/api/v1/players/alloha';
+        case 'lumex':
+          return '/api/v1/players/lumex';
+        case 'vibix':
+          return '/api/v1/players/vibix';
+        default:
+          return '/api/v1/players/alloha';
+      }
+    };
+
+    const playerEndpoint = getPlayerEndpoint(settings.defaultPlayer);
     
     // Формируем URL, где imdbId является частью пути
     const newIframeSrc = `${API_BASE_URL}${playerEndpoint}/${resolvedImdb}`;
@@ -76,7 +89,20 @@ export default function MoviePlayer({ id, title, poster, imdbId, isFullscreen = 
         return;
       }
 
-      const playerEndpoint = settings.defaultPlayer === 'alloha' ? '/api/v1/players/alloha' : '/api/v1/players/lumex';
+      const getPlayerEndpoint = (player: string) => {
+        switch (player) {
+          case 'alloha':
+            return '/api/v1/players/alloha';
+          case 'lumex':
+            return '/api/v1/players/lumex';
+          case 'vibix':
+            return '/api/v1/players/vibix';
+          default:
+            return '/api/v1/players/alloha';
+        }
+      };
+
+      const playerEndpoint = getPlayerEndpoint(settings.defaultPlayer);
       const newIframeSrc = `${API_BASE_URL}${playerEndpoint}/${resolvedImdb}`;
       setIframeSrc(newIframeSrc);
       setLoading(false);

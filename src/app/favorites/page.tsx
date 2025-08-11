@@ -30,16 +30,7 @@ export default function FavoritesPage() {
 
       try {
         const response = await neoApi.get('/api/v1/favorites');
-        const items = Array.isArray(response.data)
-          ? response.data.map((m: any) => ({
-              id: m.id,
-              mediaId: String(m.id),
-              mediaType: 'movie' as const,
-              title: m.title ?? m.name ?? '',
-              posterPath: m.poster_path ?? '',
-            }))
-          : [];
-        setFavorites(items);
+        setFavorites(response.data);
       } catch (error: any) {
         console.error('Failed to fetch favorites:', error);
         // Редиректим только при явном 401

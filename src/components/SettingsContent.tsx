@@ -17,10 +17,15 @@ export default function SettingsContent() {
       name: 'Lumex',
       description: 'Альтернативный плеер, может быть полезен при проблемах с основным.',
     },
+    {
+      id: 'vibix',
+      name: 'Vibix',
+      description: 'Современный плеер с адаптивным качеством и стабильной работой.',
+    },
   ];
 
   const handlePlayerSelect = (playerId: string) => {
-    updateSettings({ defaultPlayer: playerId as 'alloha' | 'lumex' });
+    updateSettings({ defaultPlayer: playerId as 'alloha' | 'lumex' | 'vibix' });
   };
 
   return (

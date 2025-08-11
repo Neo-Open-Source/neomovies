@@ -6,7 +6,7 @@ interface Settings {
   theme: 'light' | 'dark';
   language: 'ru' | 'en';
   notifications: boolean;
-  defaultPlayer: 'alloha' | 'lumex';
+  defaultPlayer: 'alloha' | 'lumex' | 'vibix';
 }
 
 const defaultSettings: Settings = {
