@@ -187,5 +187,5 @@ Users are advised to verify whether use of the site complies with their local co
 ---
 
 <div align="center">
-  <p>Made with ❤️ by Foxix</p>
+  <p>Made by Galaxy AI✨</p>
 </div>
