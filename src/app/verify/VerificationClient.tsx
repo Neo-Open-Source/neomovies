@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authAPI } from '../../lib/authApi';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 export default function VerificationClient() {
+  const { t } = useTranslation();
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [countdown, setCountdown] = useState(60);
@@ -41,12 +43,12 @@ export default function VerificationClient() {
 
     try {
       if (!email) {
-        throw new Error('Не удалось получить email для подтверждения');
+        throw new Error(t.verify.emailError);
       }
       await verifyCode(code);
       router.replace('/');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Произошла ошибка');
+      setError(err instanceof Error ? err.message : t.common.error);
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +64,7 @@ export default function VerificationClient() {
       await authAPI.resendCode(email);
       setCountdown(60);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Не удалось отправить код');
+      setError(err instanceof Error ? err.message : t.verify.resendFailed);
     } finally {
       setIsResending(false);
     }
@@ -70,9 +72,9 @@ export default function VerificationClient() {
 
   return (
     <div className="w-full max-w-md bg-warm-50 dark:bg-warm-900 rounded-lg shadow-lg p-8">
-      <h2 className="text-xl font-bold text-center mb-2 text-foreground">Подтверждение email</h2>
+      <h2 className="text-xl font-bold text-center mb-2 text-foreground">{t.verify.title}</h2>
       <p className="text-muted-foreground text-center mb-8">
-        Мы отправили код подтверждения на {email}
+        {t.verify.sentCode} {email}
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-6">

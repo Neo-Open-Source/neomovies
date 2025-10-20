@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 export default function LoginClient() {
+  const { t } = useTranslation();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,7 +36,7 @@ export default function LoginClient() {
         router.push(`/verify?email=${encodeURIComponent(email)}`);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Произошла ошибка');
+      setError(err instanceof Error ? err.message : t.common.error);
     } finally {
       setIsLoading(false);
     }
@@ -53,7 +55,7 @@ export default function LoginClient() {
             <div>
               <input
                 type="text"
-                placeholder="Имя"
+                placeholder={t.auth.name}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required={!isLogin}
@@ -76,7 +78,7 @@ export default function LoginClient() {
           <div>
             <input
               type="password"
-              placeholder="Пароль"
+                placeholder={t.auth.password}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -89,7 +91,7 @@ export default function LoginClient() {
             disabled={isLoading}
             className="w-full py-3 px-4 bg-accent text-white rounded-lg font-medium hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isLoading ? 'Загрузка...' : isLogin ? 'Войти' : 'Зарегистрироваться'}
+            {isLoading ? t.common.loading : isLogin ? t.auth.loginButton : t.auth.registerButton}
           </button>
         </form>
 
@@ -98,7 +100,7 @@ export default function LoginClient() {
             <div className="w-full border-t border-warm-200 dark:border-warm-700"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-warm-50 dark:bg-warm-900 text-warm-500">или</span>
+            <span className="px-2 bg-warm-50 dark:bg-warm-900 text-warm-500">{t.common.or}</span>
           </div>
         </div>
 
@@ -108,7 +110,7 @@ export default function LoginClient() {
           className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-warm-200 dark:border-warm-700 rounded-lg bg-white dark:bg-warm-800 hover:bg-warm-100 dark:hover:bg-warm-700 text-warm-900 dark:text-warm-50 transition-colors"
         >
           <Image src="/google.svg" alt="Google" width={20} height={20} />
-          Продолжить с Google
+          {t.auth.continueWithGoogle}
         </button>
 
         {error && (
@@ -118,13 +120,13 @@ export default function LoginClient() {
         )}
 
         <div className="mt-6 text-center text-sm text-warm-600 dark:text-warm-400">
-          {isLogin ? 'Еще нет аккаунта?' : 'Уже есть аккаунт?'}{' '}
+          {isLogin ? t.auth.noAccount : t.auth.haveAccount}{' '}
           <button
             type="button"
             onClick={() => setIsLogin(!isLogin)}
             className="text-accent hover:underline focus:outline-none"
           >
-            {isLogin ? 'Зарегистрироваться' : 'Войти'}
+            {isLogin ? t.auth.registerButton : t.auth.loginButton}
           </button>
         </div>
       </div>

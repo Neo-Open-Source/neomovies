@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import HeaderBar from './HeaderBar';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from './ThemeProvider';
+import { TranslationProvider } from '@/contexts/TranslationContext';
 import { useState, useEffect } from 'react';
 import MobileNav from './MobileNav';
 
@@ -28,12 +29,14 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-      <div className="flex flex-col min-h-screen">
-        <HeaderBar onBurgerClick={() => setIsMobileMenuOpen(true)} />
-        <MobileNav show={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
-        <main className="flex-1 w-full">{children}</main>
-        <Toaster position="bottom-right" />
-      </div>
+      <TranslationProvider>
+        <div className="flex flex-col min-h-screen">
+          <HeaderBar onBurgerClick={() => setIsMobileMenuOpen(true)} />
+          <MobileNav show={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+          <main className="flex-1 w-full">{children}</main>
+          <Toaster position="bottom-right" />
+        </div>
+      </TranslationProvider>
     </ThemeProvider>
   );
 }

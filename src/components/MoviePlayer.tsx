@@ -1,49 +1,91 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSettings } from '@/hooks/useSettings';
-import { moviesAPI } from '@/lib/neoApi';
+import { useSettings, getAvailablePlayers } from '@/hooks/useSettings';
+import { moviesAPI, tvShowsAPI } from '@/lib/neoApi';
 import { AlertTriangle, Info } from 'lucide-react';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface MoviePlayerProps {
   id: string;
   title: string;
   poster: string;
   imdbId?: string;
+  kinopoiskId?: string;
   isFullscreen?: boolean;
+  season?: number;
+  episode?: number;
+  onPlayerChange?: (player: string) => void;
+  selectedPlayer?: string;
 }
 
-export default function MoviePlayer({ id, title, poster, imdbId, isFullscreen = false }: MoviePlayerProps) {
+export default function MoviePlayer({ 
+  id, 
+  title, 
+  poster, 
+  imdbId,
+  kinopoiskId, 
+  isFullscreen = false,
+  season,
+  episode,
+  onPlayerChange,
+  selectedPlayer
+}: MoviePlayerProps) {
+  const { t } = useTranslation();
   const { settings, isInitialized } = useSettings();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [iframeSrc, setIframeSrc] = useState<string | null>(null);
   const [resolvedImdb, setResolvedImdb] = useState<string | null>(imdbId ?? null);
+  const [resolvedKinopoiskId, setResolvedKinopoiskId] = useState<number | null>(kinopoiskId ? parseInt(kinopoiskId) : null);
+  const [currentPlayer, setCurrentPlayer] = useState<string>(selectedPlayer || settings.defaultPlayer);
 
   useEffect(() => {
-    const fetchImdbId = async () => {
-      if (imdbId) {
+    const fetchExternalIds = async () => {
+      if (imdbId && kinopoiskId) {
         setResolvedImdb(imdbId);
+        setResolvedKinopoiskId(parseInt(kinopoiskId));
         return;
       }
+      
+      if (imdbId || kinopoiskId) {
+        if (imdbId) setResolvedImdb(imdbId);
+        if (kinopoiskId) setResolvedKinopoiskId(parseInt(kinopoiskId));
+        return;
+      }
+      
       try {
         setLoading(true);
         setError(null);
-        const { data } = await moviesAPI.getMovie(id);
-        if (!data?.imdb_id) throw new Error('IMDb ID не найден');
-        setResolvedImdb(data.imdb_id);
+        const externalIdsAPI = season !== undefined ? tvShowsAPI : moviesAPI;
+        const externalIds = await externalIdsAPI.getExternalIds(id);
+        if (externalIds?.imdb_id) {
+          setResolvedImdb(externalIds.imdb_id);
+        }
+        if (externalIds?.kinopoisk_id) {
+          setResolvedKinopoiskId(externalIds.kinopoisk_id);
+        }
       } catch (err) {
-        console.error('Error fetching IMDb ID:', err);
-        setError('Не удалось получить информацию для плеера.');
+        console.error('Error fetching external IDs:', err);
+        setError(t.player.errorInfo);
       } finally {
         setLoading(false);
       }
     };
-    fetchImdbId();
-  }, [id, imdbId]);
+    fetchExternalIds();
+  }, [id, imdbId, kinopoiskId, season]);
 
   useEffect(() => {
-    if (!isInitialized || !resolvedImdb) return;
+    if (selectedPlayer) {
+      setCurrentPlayer(selectedPlayer);
+    }
+  }, [selectedPlayer]);
+
+  useEffect(() => {
+    if (!isInitialized) return;
+    
+    // Проверяем, есть ли хотя бы один из ID (IMDB или KP)
+    if (!resolvedImdb && !resolvedKinopoiskId) return;
 
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
     if (!API_BASE_URL) {
@@ -51,31 +93,111 @@ export default function MoviePlayer({ id, title, poster, imdbId, isFullscreen = 
       return;
     }
 
-    const getPlayerEndpoint = (player: string) => {
+    const getPlayerUrl = (player: string, imdbId: string | null, movieId: string, kpId: number | null) => {
+      const mediaType = (season !== undefined && episode !== undefined) ? 'tv' : 'movie';
+      const queryParams = (season !== undefined && episode !== undefined) 
+        ? `?season=${season}&episode=${episode}` 
+        : '';
+
       switch (player) {
         case 'alloha':
-          return '/api/v1/players/alloha';
+          if (kpId) {
+            return `${API_BASE_URL}/api/v1/players/alloha/kp/${kpId}${queryParams}`;
+          }
+          if (imdbId) {
+            return `${API_BASE_URL}/api/v1/players/alloha/imdb/${imdbId}${queryParams}`;
+          }
+          break;
+        
         case 'lumex':
-          return '/api/v1/players/lumex';
+          if (kpId) {
+            return `${API_BASE_URL}/api/v1/players/lumex/kp/${kpId}`;
+          }
+          if (imdbId) {
+            return `${API_BASE_URL}/api/v1/players/lumex/imdb/${imdbId}`;
+          }
+          break;
+        
         case 'vibix':
-          return '/api/v1/players/vibix';
+          if (kpId) {
+            return `${API_BASE_URL}/api/v1/players/vibix/kp/${kpId}`;
+          }
+          if (imdbId) {
+            return `${API_BASE_URL}/api/v1/players/vibix/imdb/${imdbId}`;
+          }
+          break;
+        
+        case 'vidsrc':
+          if (imdbId) {
+            return `${API_BASE_URL}/api/v1/players/vidsrc/${mediaType}/${imdbId}${queryParams}`;
+          }
+          break;
+        
+        case 'vidlink':
+          if (mediaType === 'movie' && imdbId) {
+            return `${API_BASE_URL}/api/v1/players/vidlink/movie/${imdbId}`;
+          } else if (mediaType === 'tv') {
+            // Vidlink TV использует TMDB ID, но у нас его может не быть
+            // Попробуем использовать movieId как fallback
+            return `${API_BASE_URL}/api/v1/players/vidlink/tv/${movieId}${queryParams}`;
+          }
+          break;
+        
+        case 'hdvb':
+          if (kpId) {
+            return `${API_BASE_URL}/api/v1/players/hdvb/kp/${kpId}`;
+          }
+          if (imdbId) {
+            return `${API_BASE_URL}/api/v1/players/hdvb/imdb/${imdbId}`;
+          }
+          break;
+        
         default:
-          return '/api/v1/players/alloha';
+          if (kpId) {
+            return `${API_BASE_URL}/api/v1/players/alloha/kp/${kpId}${queryParams}`;
+          }
+          if (imdbId) {
+            return `${API_BASE_URL}/api/v1/players/alloha/imdb/${imdbId}${queryParams}`;
+          }
+          break;
       }
+      
+      // Если не удалось построить URL для выбранного плеера, пробуем fallback
+      if (kpId) {
+        return `${API_BASE_URL}/api/v1/players/alloha/kp/${kpId}${queryParams}`;
+      }
+      if (imdbId) {
+        return `${API_BASE_URL}/api/v1/players/alloha/imdb/${imdbId}${queryParams}`;
+      }
+      
+      return null;
     };
 
-    const playerEndpoint = getPlayerEndpoint(settings.defaultPlayer);
+    const newIframeSrc = getPlayerUrl(currentPlayer, resolvedImdb, id, resolvedKinopoiskId);
     
-    // Формируем URL, где imdbId является частью пути
-    const newIframeSrc = `${API_BASE_URL}${playerEndpoint}/${resolvedImdb}`;
+    // Детальное логирование для отладки
+    console.log('🎬 MoviePlayer URL Generation:', {
+      player: currentPlayer,
+      imdbId: resolvedImdb,
+      kinopoiskId: resolvedKinopoiskId,
+      movieId: id,
+      season,
+      episode,
+      generatedUrl: newIframeSrc
+    });
     
-    setIframeSrc(newIframeSrc);
-    setLoading(false);
-  }, [resolvedImdb, isInitialized, settings.defaultPlayer]);
+    if (newIframeSrc) {
+      setIframeSrc(newIframeSrc);
+      setLoading(false);
+    } else {
+      setError('Не удалось построить URL плеера для доступных ID');
+      setLoading(false);
+    }
+  }, [resolvedImdb, isInitialized, currentPlayer, id, season, episode]);
 
   const handleRetry = () => {
     setError(null);
-    if (!resolvedImdb) {
+    if (!resolvedImdb && !resolvedKinopoiskId) {
       const event = new Event('fetchImdb');
       window.dispatchEvent(event);
     } else {
@@ -89,23 +211,53 @@ export default function MoviePlayer({ id, title, poster, imdbId, isFullscreen = 
         return;
       }
 
-      const getPlayerEndpoint = (player: string) => {
+      const getPlayerUrl = (player: string, imdbId: string | null, movieId: string, kpId: number | null) => {
+        const mediaType = (season !== undefined && episode !== undefined) ? 'tv' : 'movie';
+        const queryParams = (season !== undefined && episode !== undefined) 
+          ? `?season=${season}&episode=${episode}` 
+          : '';
+        
         switch (player) {
           case 'alloha':
-            return '/api/v1/players/alloha';
+            if (kpId) return `${API_BASE_URL}/api/v1/players/alloha/kp/${kpId}${queryParams}`;
+            if (imdbId) return `${API_BASE_URL}/api/v1/players/alloha/imdb/${imdbId}${queryParams}`;
+            break;
           case 'lumex':
-            return '/api/v1/players/lumex';
+            if (kpId) return `${API_BASE_URL}/api/v1/players/lumex/kp/${kpId}`;
+            if (imdbId) return `${API_BASE_URL}/api/v1/players/lumex/imdb/${imdbId}`;
+            break;
           case 'vibix':
-            return '/api/v1/players/vibix';
+            if (kpId) return `${API_BASE_URL}/api/v1/players/vibix/kp/${kpId}`;
+            if (imdbId) return `${API_BASE_URL}/api/v1/players/vibix/imdb/${imdbId}`;
+            break;
+          case 'vidsrc':
+            if (imdbId) return `${API_BASE_URL}/api/v1/players/vidsrc/${mediaType}/${imdbId}${queryParams}`;
+            break;
+          case 'vidlink':
+            if (mediaType === 'movie' && imdbId) return `${API_BASE_URL}/api/v1/players/vidlink/movie/${imdbId}`;
+            if (mediaType === 'tv') return `${API_BASE_URL}/api/v1/players/vidlink/tv/${movieId}${queryParams}`;
+            break;
+          case 'hdvb':
+            if (kpId) return `${API_BASE_URL}/api/v1/players/hdvb/kp/${kpId}`;
+            if (imdbId) return `${API_BASE_URL}/api/v1/players/hdvb/imdb/${imdbId}`;
+            break;
           default:
-            return '/api/v1/players/alloha';
+            if (kpId) return `${API_BASE_URL}/api/v1/players/alloha/kp/${kpId}${queryParams}`;
+            if (imdbId) return `${API_BASE_URL}/api/v1/players/alloha/imdb/${imdbId}${queryParams}`;
+            break;
         }
+        
+        return null;
       };
 
-      const playerEndpoint = getPlayerEndpoint(settings.defaultPlayer);
-      const newIframeSrc = `${API_BASE_URL}${playerEndpoint}/${resolvedImdb}`;
-      setIframeSrc(newIframeSrc);
-      setLoading(false);
+      const newIframeSrc = getPlayerUrl(settings.defaultPlayer, resolvedImdb, id, resolvedKinopoiskId);
+      if (newIframeSrc) {
+        setIframeSrc(newIframeSrc);
+        setLoading(false);
+      } else {
+        setError('Не удалось построить URL плеера для доступных ID');
+        setLoading(false);
+      }
     }
   };
 
@@ -142,7 +294,7 @@ export default function MoviePlayer({ id, title, poster, imdbId, isFullscreen = 
         ) : (
           loading && (
             <div className="absolute left-0 top-0 flex h-full w-full items-center justify-center text-warm-300">
-              Загрузка плеера...
+              {t.player.loading}
             </div>
           )
         )}
@@ -150,7 +302,7 @@ export default function MoviePlayer({ id, title, poster, imdbId, isFullscreen = 
       {settings.defaultPlayer !== 'lumex' && !isFullscreen && (
         <div className="mt-3 flex items-center gap-2 rounded-md bg-blue-100 p-3 text-sm text-blue-800">
           <Info size={20} />
-          <span>Для возможности скачивания фильма выберите плеер Lumex в настройках.</span>
+          <span>{t.player.downloadHint}</span>
         </div>
       )}
     </div>

@@ -1,9 +1,11 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { getImageUrl } from "@/lib/neoApi";
+import { getImageUrl as getImageUrlOriginal } from "@/lib/neoApi";
 import { formatDate } from "@/lib/utils";
 import FavoriteButton from "./FavoriteButton";
+import { unifyMovieData, formatRating, getImageUrl } from '@/lib/dataUtils';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 export interface MovieLike {
   id: number;
@@ -14,15 +16,22 @@ export interface MovieLike {
 }
 
 export default function MovieTile({ movie }: { movie: MovieLike }) {
-  const fullDate = movie.release_date ? formatDate(movie.release_date) : "";
+  const { locale } = useTranslation();
+  const unified = unifyMovieData(movie);
+  const fullDate = unified.releaseDate ? formatDate(unified.releaseDate) : "";
+  const posterUrl = getImageUrl(unified.posterPath, "w342");
+  const rating = formatRating(unified.voteAverage);
+  
+  const idType = locale === 'ru' ? 'kp' : 'tmdb';
+  
   return (
     <div className="w-full flex-shrink-0">
       <div className="relative aspect-[2/3] overflow-hidden rounded-md bg-gray-200 dark:bg-gray-800 shadow-sm">
-        <Link href={`/movie/${movie.id}`}>
-          {movie.poster_path ? (
+        <Link href={`/movie/${idType}_${unified.id}`}>
+          {posterUrl ? (
             <Image
-              src={getImageUrl(movie.poster_path, "w342")}
-              alt={movie.title}
+              src={posterUrl}
+              alt={unified.title}
               fill
               className="object-cover transition-transform hover:scale-105"
               unoptimized
@@ -35,18 +44,18 @@ export default function MovieTile({ movie }: { movie: MovieLike }) {
         </Link>
         <div className="absolute right-1 top-1 z-10">
           <FavoriteButton
-            mediaId={movie.id.toString()}
-            mediaType="movie"
-            title={movie.title}
-            posterPath={movie.poster_path}
+            mediaId={unified.id.toString()}
+            mediaType={unified.isSerial ? "tv" : "movie"}
+            title={unified.title}
+            posterPath={unified.posterPath}
           />
         </div>
       </div>
-      <Link href={`/movie/${movie.id}`} className="mt-2 block text-sm font-medium leading-snug text-foreground hover:text-accent">
-        {movie.title}
+      <Link href={`/movie/${idType}_${unified.id}`} className="mt-2 block text-sm font-medium leading-snug text-foreground hover:text-accent">
+        {unified.title}
       </Link>
       <span className="text-xs text-muted-foreground">
-        {fullDate} {movie.vote_average ? `· ${movie.vote_average.toFixed(1)}` : ""}
+        {fullDate} {rating !== '—' ? `· ${rating}` : ""}
       </span>
     </div>
   );

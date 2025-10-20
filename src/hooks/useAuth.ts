@@ -21,6 +21,12 @@ export function useAuth() {
       const data = response.data.data || response.data;
       if (data?.token) {
         localStorage.setItem('token', data.token);
+        
+        // Сохраняем refresh токен, если он есть
+        if (data.refreshToken) {
+          localStorage.setItem('refreshToken', data.refreshToken);
+        }
+        
         let name: string | undefined = undefined;
         let emailVal: string | undefined = undefined;
         try {
@@ -81,6 +87,7 @@ export function useAuth() {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     delete neoApi.defaults.headers.common['Authorization'];
     localStorage.removeItem('userName');
     localStorage.removeItem('userEmail');

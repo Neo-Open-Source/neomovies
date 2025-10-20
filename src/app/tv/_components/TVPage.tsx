@@ -1,7 +1,7 @@
 'use client';
 
 import PageLayout from '@/components/PageLayout';
-import TVContent from '@/app/tv/[id]/TVContent';
+import TVContent from './TVContent';
 import type { TVShowDetails } from '@/lib/neoApi';
 
 interface TVPageProps {

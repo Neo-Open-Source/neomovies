@@ -187,5 +187,5 @@ Users are advised to verify whether use of the site complies with their local co
 ---
 
 <div align="center">
-  <p>Made with <3 by Foxix/Erno</p>
+  <p>Made with ❤️ by Foxix</p>
 </div>

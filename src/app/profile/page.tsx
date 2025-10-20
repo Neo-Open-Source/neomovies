@@ -7,8 +7,10 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Loader2, User, LogOut, Trash2, ArrowLeft } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
   const { logout } = useAuth();
   const router = useRouter();
   const [userName, setUserName] = useState<string | null>(null);
@@ -30,12 +32,12 @@ export default function ProfilePage() {
   const handleConfirmDelete = async () => {
     try {
       await authAPI.deleteAccount();
-      toast.success('Аккаунт успешно удален.');
+      toast.success(t.profile.accountDeleted);
       setIsModalOpen(false);
       logout();
     } catch (error) {
       console.error('Failed to delete account:', error);
-      toast.error('Не удалось удалить аккаунт. Попробуйте снова.');
+      toast.error(t.profile.deleteFailed);
       setIsModalOpen(false);
     }
   };
@@ -57,7 +59,7 @@ export default function ProfilePage() {
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft size={20} />
-            <span>Назад</span>
+            <span>{t.common.back}</span>
           </button>
         </div>
         <div className="bg-warm-50 dark:bg-warm-900 rounded-lg shadow-lg p-8 text-center mb-6">
@@ -69,25 +71,25 @@ export default function ProfilePage() {
         </div>
         
         <div className="bg-warm-50 dark:bg-warm-900 rounded-lg shadow-lg p-6 sm:p-8 mb-6">
-          <h2 className="text-xl font-bold text-foreground mb-4 text-left">Управление аккаунтом</h2>
+          <h2 className="text-xl font-bold text-foreground mb-4 text-left">{t.profile.accountManagement}</h2>
           <button
               onClick={logout}
               className="w-full sm:w-auto px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-accent hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent flex items-center justify-center gap-2"
             >
               <LogOut size={20} />
-              <span>Выйти из аккаунта</span>
+              <span>{t.profile.logout}</span>
           </button>
         </div>
 
         <div className="bg-red-500/10 border-2 border-dashed border-red-500/50 rounded-lg p-6 sm:p-8 text-center">
-            <h2 className="text-xl font-bold text-red-500 mb-4">Опасная зона</h2>
-            <p className="text-red-400 mb-6">Это действие нельзя будет отменить. Все ваши данные, включая избранное, будут удалены.</p>
+            <h2 className="text-xl font-bold text-red-500 mb-4">{t.profile.dangerZone}</h2>
+            <p className="text-red-400 mb-6">{t.profile.deleteWarning}</p>
             <button
               onClick={() => setIsModalOpen(true)}
               className="w-full sm:w-auto px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 flex items-center justify-center gap-2"
             >
               <Trash2 size={20} />
-              <span>Удалить аккаунт</span>
+              <span>{t.profile.deleteAccount}</span>
           </button>
         </div>
       </div>
@@ -95,9 +97,9 @@ export default function ProfilePage() {
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         onConfirm={handleConfirmDelete}
-        title="Подтвердите удаление аккаунта"
+        title={t.profile.confirmDelete}
       >
-        <p>Вы уверены, что хотите навсегда удалить свой аккаунт? Все ваши данные, включая избранное и реакции, будут безвозвратно удалены. Это действие нельзя будет отменить.</p>
+        <p>{t.profile.confirmDeleteText}</p>
       </Modal>
     </div>
   );

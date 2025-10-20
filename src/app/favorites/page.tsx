@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { neoApi, getImageUrl } from '@/lib/neoApi';
 import { Loader2, HeartCrack } from 'lucide-react';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface Favorite {
   id: number;
@@ -16,6 +17,7 @@ interface Favorite {
 }
 
 export default function FavoritesPage() {
+  const { t } = useTranslation();
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -30,16 +32,14 @@ export default function FavoritesPage() {
 
       try {
         const response = await neoApi.get('/api/v1/favorites');
-        setFavorites(response.data);
+        // Обрабатываем как обёрнутый, так и прямой ответ
+        const data = response.data?.data || response.data;
+        setFavorites(Array.isArray(data) ? data : []);
       } catch (error: any) {
         console.error('Failed to fetch favorites:', error);
-        // Редиректим только при явном 401
-        if (error?.response?.status === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('userName');
-          localStorage.removeItem('userEmail');
-          router.replace('/login');
-        }
+        // 401 ошибки теперь обрабатываются автоматически через interceptor
+        // Здесь просто устанавливаем пустой массив при ошибке
+        setFavorites([]);
       } finally {
         setLoading(false);
       }
@@ -61,15 +61,15 @@ export default function FavoritesPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <HeartCrack size={80} className="mx-auto mb-6 text-gray-400" />
-          <h1 className="text-3xl font-bold text-foreground mb-4">Избранное пусто</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-4">{t.favorites.empty}</h1>
           <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
-            У вас пока нет избранных фильмов и сериалов
+            {t.favorites.emptyDescription}
           </p>
           <Link
             href="/"
             className="inline-flex items-center justify-center px-6 py-3 text-base font-medium text-white bg-accent rounded-lg hover:bg-accent/90 transition-colors"
           >
-            Найти фильмы
+            {t.favorites.goToMovies}
           </Link>
         </div>
       </div>
@@ -80,7 +80,7 @@ export default function FavoritesPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-4">Избранное</h1>
+          <h1 className="text-4xl font-bold text-foreground mb-4">{t.favorites.title}</h1>
           <p className="text-lg text-gray-600 dark:text-gray-400">
             Ваша коллекция любимых фильмов и сериалов
           </p>

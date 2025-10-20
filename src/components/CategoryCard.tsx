@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Category } from '@/lib/neoApi';
+import { Category, getImageUrl } from '@/lib/neoApi';
 
 interface CategoryCardProps {
   category: Category;
@@ -48,7 +48,9 @@ function getCategoryColor(categoryId: number): string {
 
 function CategoryCard({ category, backgroundUrl }: CategoryCardProps) {
   const router = useRouter();
-  const [imageUrl] = useState<string>(backgroundUrl || '/images/placeholder.jpg');
+  const [imageUrl] = useState<string>(
+    backgroundUrl ? getImageUrl(backgroundUrl, 'w780') : '/images/placeholder.jpg'
+  );
   
   const categoryColor = getCategoryColor(category.id);
   

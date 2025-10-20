@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { Movie, TVShow } from '@/types/movie';
 import { formatDate } from '@/lib/utils';
 import { useImageLoader } from '@/hooks/useImageLoader';
+import { useTranslation } from '@/contexts/TranslationContext';
+import { unifyMovieData } from '@/lib/dataUtils';
 
 // Тип-гард для проверки, является ли объект сериалом
 function isTVShow(media: Movie | TVShow): media is TVShow {
@@ -24,15 +26,17 @@ const getRatingColor = (rating: number) => {
 };
 
 export default function MovieCard({ movie, priority = false }: MovieCardProps) {
-  // Определяем, это фильм или сериал с помощью тип-гарда
+  const { t, locale } = useTranslation();
   const isTV = isTVShow(movie);
+  const unified = unifyMovieData(movie);
   
-  // Используем правильный заголовок и дату в зависимости от типа
-  const title = isTV ? movie.name || 'Без названия' : movie.title || 'Без названия';
+  const title = isTV ? movie.name || t.common.untitled : movie.title || t.common.untitled;
   const date = isTV ? movie.first_air_date : movie.release_date;
   
-  // Выбираем правильный URL
-  const url = isTV ? `/tv/${movie.id}` : `/movie/${movie.id}`;
+  const idType = locale === 'ru' ? 'kp' : 'tmdb';
+  const id = movie.id;
+  const sourceId = `${idType}_${id}`;
+  const url = isTV ? `/tv/${sourceId}` : `/movie/${sourceId}`;
   
   // Загружаем изображение с оптимизированным размером для конкретного устройства
   // Используем меньший размер изображения для мобильных устройств

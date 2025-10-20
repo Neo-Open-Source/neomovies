@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Loader2, AlertTriangle, Copy, Check, Download, ExternalLink } from 'lucide-react';
 import { torrentsAPI, type TorrentResult } from '@/lib/neoApi';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface TorrentSelectorProps {
   imdbId: string | null;
@@ -21,6 +22,7 @@ interface ParsedTorrent extends TorrentResult {
 }
 
 export default function TorrentSelector({ imdbId, type, title, originalTitle, year }: TorrentSelectorProps) {
+  const { t } = useTranslation();
   const [torrents, setTorrents] = useState<ParsedTorrent[] | null>(null);
   const [availableSeasons, setAvailableSeasons] = useState<number[]>([]);
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
@@ -98,19 +100,36 @@ export default function TorrentSelector({ imdbId, type, title, originalTitle, ye
     setLoading(true);
     setError(null);
     try {
+      console.log('Fetching torrents for IMDB ID:', imdbId, 'Type:', type);
       const response = await torrentsAPI.searchTorrents(imdbId!, type);
-      if (response.data.total === 0) {
-        setError('Торренты не найдены.');
+      console.log('Torrents API response:', response);
+      console.log('Torrents data:', response.data);
+      
+      const total = response.data?.total || 0;
+      const results = response.data?.results || [];
+      
+      console.log('Total torrents:', total, 'Results count:', results.length);
+      
+      if (total === 0 || results.length === 0) {
+        console.warn('No torrents found');
+        setError(t.torrents.notFound);
       } else {
-        const parsedTorrents: ParsedTorrent[] = response.data.results.map(torrent => ({
+        const parsedTorrents: ParsedTorrent[] = results.map((torrent: TorrentResult) => ({
           ...torrent,
           quality: parseQuality(torrent.title || ''),
           season: type === 'tv' ? parseSeason(torrent.title || '') : undefined,
           sizeFormatted: formatSize(torrent.size || 0)
         }));
+        console.log('Parsed torrents:', parsedTorrents);
         setTorrents(parsedTorrents);
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error('Error loading torrents:', err);
+      console.error('Error details:', {
+        message: err?.message,
+        response: err?.response?.data,
+        status: err?.response?.status
+      });
       setError('Не удалось загрузить список торрентов.');
     } finally {
       setLoading(false);
@@ -221,17 +240,10 @@ export default function TorrentSelector({ imdbId, type, title, originalTitle, ye
             size="sm"
             className="flex-1 border-gray-300 text-gray-700 dark:border-zinc-600 dark:text-zinc-300"
           >
-            {copiedMagnet === torrent.magnet ? (
-              <>
-                <Check className="h-4 w-4 mr-2 text-green-500" />
-                Скопировано
-              </>
-            ) : (
-              <>
-                <Copy className="h-4 w-4 mr-2" />
-                Копировать
-              </>
-            )}
+            <>
+              {copiedMagnet === torrent.magnet ? <Check className="h-4 w-4 mr-2 text-green-500" /> : <Copy className="h-4 w-4 mr-2" />}
+              {copiedMagnet === torrent.magnet ? t.torrents.copied : t.torrents.copy}
+            </>
           </Button>
           
           <Button
@@ -240,7 +252,7 @@ export default function TorrentSelector({ imdbId, type, title, originalTitle, ye
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700 dark:hover:bg-blue-800"
           >
             <ExternalLink className="h-4 w-4 mr-2" />
-            Скачать
+            {t.torrents.download}
           </Button>
         </div>
       </div>
@@ -251,7 +263,7 @@ export default function TorrentSelector({ imdbId, type, title, originalTitle, ye
     return (
       <div className="mt-4 flex items-center justify-center p-4">
         <Loader2 className="mr-2 h-4 w-4 animate-spin text-gray-500 dark:text-gray-400" />
-        <span className="text-gray-700 dark:text-gray-300">Загрузка торрентов...</span>
+        <span className="text-gray-700 dark:text-gray-300">{t.torrents.loading}</span>
       </div>
     );
   }
@@ -275,7 +287,7 @@ export default function TorrentSelector({ imdbId, type, title, originalTitle, ye
         <DialogTrigger asChild>
           <Button className="w-full sm:w-auto" size="lg">
             <Download className="h-4 w-4 mr-2" />
-            Скачать ({torrents.length} {torrents.length === 1 ? 'раздача' : torrents.length < 5 ? 'раздачи' : 'раздач'})
+            {t.torrents.download} ({torrents.length} {torrents.length === 1 ? t.torrents.releases.one : torrents.length < 5 ? t.torrents.releases.few : t.torrents.releases.many})
           </Button>
         </DialogTrigger>
         
@@ -334,7 +346,7 @@ export default function TorrentSelector({ imdbId, type, title, originalTitle, ye
                       onClick={() => setSelectedSeason(null)}
                       className={selectedSeason === null ? 'bg-zinc-800 text-white dark:bg-white dark:text-black' : 'text-gray-700 border-gray-300 dark:text-zinc-300 dark:border-zinc-600'}
                     >
-                      Все сезоны
+                      {t.torrents.allSeasons}
                     </Button>
                     {availableSeasons.map(season => {
                       const count = torrents?.filter(t => t.season === season && (selectedQuality === 'all' || t.quality === selectedQuality)).length || 0;
@@ -358,7 +370,7 @@ export default function TorrentSelector({ imdbId, type, title, originalTitle, ye
             <div className="space-y-3">
               {filteredTorrents.length === 0 ? (
                 <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  Нет раздач, соответствующих выбранным фильтрам
+                  {t.torrents.noMatches}
                 </div>
               ) : (
                 filteredTorrents.map((torrent, index) => (

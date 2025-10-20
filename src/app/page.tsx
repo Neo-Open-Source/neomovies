@@ -5,8 +5,10 @@ import { useMovies, MovieCategory } from '@/hooks/useMovies';
 import MovieTile from '@/components/MovieTile';
 import Pagination from '@/components/Pagination';
 import HorizontalSlider from '@/components/HorizontalSlider';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 export default function HomePage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<MovieCategory>('popular');
   const { movies, loading, error, totalPages, currentPage, setPage } = useMovies({ category: activeTab });
 
@@ -18,7 +20,7 @@ export default function HomePage() {
   if (loading && !movies.length) {
     return (
       <div className="flex min-h-[calc(100vh-128px)] items-center justify-center text-gray-500 dark:text-gray-400">
-        Загрузка...
+        {t.common.loading}
       </div>
     );
   }
@@ -46,7 +48,7 @@ export default function HomePage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-500'
               } whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium`}
             >
-              Популярные
+              {t.home.popular}
             </button>
             <button
               onClick={() => setActiveTab('now-playing')}
@@ -56,7 +58,7 @@ export default function HomePage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-500'
               } whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium`}
             >
-              Новинки
+              {t.home.nowPlaying}
             </button>
              <button
               onClick={() => setActiveTab('top-rated')}
@@ -66,18 +68,9 @@ export default function HomePage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-500'
               } whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium`}
             >
-              Топ рейтинга
+              {t.home.topRated}
             </button>
-            <button
-              onClick={() => setActiveTab('upcoming')}
-              className={`${ 
-                activeTab === 'upcoming'
-                  ? 'border-red-500 text-red-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-500'
-              } whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium`}
-            >
-              Скоро
-            </button>
+            {/* Удалена вкладка "Скоро" */}
           </nav>
         </div>
 

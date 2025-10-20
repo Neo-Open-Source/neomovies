@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import { categoriesAPI, Category } from '@/lib/neoApi';
 import CategoryCard from '@/components/CategoryCard';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface CategoryWithBackground extends Category {
   backgroundUrl?: string | null;
 }
 
 function CategoriesPage() {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState<CategoryWithBackground[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,46 +23,24 @@ function CategoriesPage() {
       try {
         const categoriesResponse = await categoriesAPI.getCategories();
         
-        if (!categoriesResponse.data.categories || categoriesResponse.data.categories.length === 0) {
+        if (!categoriesResponse.data || categoriesResponse.data.length === 0) {
           setError('Не удалось загрузить категории');
           setLoading(false);
           return;
         }
         
         const categoriesWithBackgrounds: CategoryWithBackground[] = await Promise.all(
-          categoriesResponse.data.categories.map(async (category: Category) => {
+          categoriesResponse.data.map(async (category: Category) => {
             try {
-              const moviesResponse = await categoriesAPI.getMoviesByCategory(category.id, 1);
-              
-              if (moviesResponse.data.results && moviesResponse.data.results.length > 0) {
-                const backgroundUrl = moviesResponse.data.results[0].backdrop_path || 
-                                    moviesResponse.data.results[0].poster_path;
-                
-                return {
-                  ...category,
-                  backgroundUrl
-                };
-              } else {
-                const tvResponse = await categoriesAPI.getTVShowsByCategory(category.id, 1);
-                
-                if (tvResponse.data.results && tvResponse.data.results.length > 0) {
-                  const backgroundUrl = tvResponse.data.results[0].backdrop_path || 
-                                      tvResponse.data.results[0].poster_path;
-                  
-                  return {
-                    ...category,
-                    backgroundUrl
-                  };
-                }
-              }
-              
-              return {
-                ...category,
-                backgroundUrl: undefined
-              };
+              // Пробуем получить сериал как фон, иначе фильм
+              const tvRes: any = await categoriesAPI.getMediaByCategory(category.id, 'tv', 1);
+              const movieRes: any = await categoriesAPI.getMediaByCategory(category.id, 'movie', 1);
+              const pick = tvRes?.results?.[0] || movieRes?.results?.[0];
+              const backgroundUrl = pick?.backdrop_path || pick?.poster_path || null;
+              return { ...category, backgroundUrl };
             } catch (error) {
               console.error(`Error fetching background for category ${category.id}:`, error);
-              return category;
+              return { ...category, backgroundUrl: null };
             }
           })
         );
@@ -68,7 +48,7 @@ function CategoriesPage() {
         setCategories(categoriesWithBackgrounds);
       } catch (error) {
         console.error('Error fetching categories:', error);
-        setError('Ошибка при загрузке категорий');
+        setError(t.categories.errorLoadingCategories);
       } finally {
         setLoading(false);
       }

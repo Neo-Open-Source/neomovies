@@ -5,6 +5,7 @@ import { searchAPI } from '@/lib/neoApi';
 import type { Movie } from '@/lib/neoApi';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 export function useSearch() {
   const [results, setResults] = useState<Movie[]>([]);
@@ -16,16 +17,15 @@ export function useSearch() {
   const [searchFailed, setSearchFailed] = useState(false);
   const { data: session } = useSession();
   const router = useRouter();
+  const { locale } = useTranslation();
 
   const filterMovies = (movies: Movie[]) => {
     return movies.filter(movie => {
-      if (movie.vote_average === 0) return false;
-      const hasRussianLetters = /[а-яА-ЯёЁ]/.test(movie.title);
-      if (!hasRussianLetters) return false;
-      if (/^\d+$/.test(movie.title)) return false;
-      const releaseDate = new Date(movie.release_date);
-      const now = new Date();
-      if (releaseDate > now) return false;
+      // Убираем фильтр по русским буквам, так как API KP может возвращать фильмы с оригинальными названиями
+      if (!movie.title && !movie.name) return false;
+      const title = movie.title || movie.name || '';
+      if (/^\d+$/.test(title)) return false; // Исключаем чисто числовые названия
+      // Убираем фильтр по дате релиза, так как это может быть неточно
       return true;
     });
   };
@@ -48,15 +48,33 @@ export function useSearch() {
       setCurrentQuery(query);
       setCurrentPage(1);
 
-      const response = await searchAPI.multiSearch(query, 1);
-      const filteredMovies = filterMovies(response.data.results);
+      // Выбор источника: ru -> kp, иначе tmdb
+      const source: 'kp' | 'tmdb' = (locale || 'ru') === 'ru' ? 'kp' : 'tmdb';
+      const response = await searchAPI.multiSearch(query, source, 1);
+      
+      // Адаптируем новый унифицированный формат к старому
+      const searchResults = response?.data || [];
+      const adaptedResults = searchResults.map((item: any) => ({
+        id: parseInt(item.id, 10),
+        title: item.title,
+        name: item.title,
+        media_type: item.type === 'tv' ? 'tv' : 'movie',
+        release_date: item.releaseDate,
+        first_air_date: item.releaseDate,
+        poster_path: item.posterUrl?.startsWith('http') ? item.posterUrl : item.posterUrl,
+        vote_average: item.rating || 0,
+        overview: item.description || '',
+        genre_ids: []
+      }));
+      
+      const filteredMovies = filterMovies(adaptedResults);
       
       if (filteredMovies.length === 0) {
         setSearchFailed(true);
       }
 
       setResults(filteredMovies);
-      setHasMore(response.data.total_pages > 1);
+      setHasMore(response?.pagination?.totalPages > 1);
     } catch (err) {
       console.error('Ошибка при поиске:', err);
       setError('Произошла ошибка при поиске');
@@ -74,12 +92,29 @@ export function useSearch() {
       setLoading(true);
       const nextPage = currentPage + 1;
       
-      const response = await searchAPI.multiSearch(currentQuery, nextPage);
-      const filteredMovies = filterMovies(response.data.results);
+      // Выбор источника: ru -> kp, иначе tmdb
+      const source: 'kp' | 'tmdb' = (locale || 'ru') === 'ru' ? 'kp' : 'tmdb';
+      const response = await searchAPI.multiSearch(currentQuery, source, nextPage);
+      
+      // Адаптируем новый унифицированный формат к старому
+      const searchResults = response?.data || [];
+      const adaptedResults = searchResults.map((item: any) => ({
+        id: parseInt(item.id, 10),
+        title: item.title,
+        name: item.title,
+        media_type: item.type === 'tv' ? 'tv' : 'movie',
+        release_date: item.releaseDate,
+        first_air_date: item.releaseDate,
+        poster_path: item.posterUrl?.startsWith('http') ? item.posterUrl : item.posterUrl,
+        vote_average: item.rating || 0,
+        overview: item.description || '',
+        genre_ids: []
+      }));
+      const filteredMovies = filterMovies(adaptedResults);
       
       setResults(prev => [...prev, ...filteredMovies]);
       setCurrentPage(nextPage);
-      setHasMore(nextPage < response.data.total_pages && nextPage < 5); // Ограничиваем до 5 страниц
+      setHasMore(nextPage < (response?.pagination?.totalPages || 0) && nextPage < 5); // Ограничиваем до 5 страниц
     } catch (err) {
       console.error('Ошибка при загрузке дополнительных результатов:', err);
       setError('Произошла ошибка при загрузке дополнительных результатов');

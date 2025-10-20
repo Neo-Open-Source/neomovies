@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useTheme } from 'next-themes';
 import { Search, Sun, Moon, User, Menu, Settings } from "lucide-react";
 import { usePathname, useRouter } from 'next/navigation';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => {
   const pathname = usePathname();
@@ -37,6 +38,7 @@ const ThemeToggleButton = () => {
 };
 
 export default function HeaderBar({ onBurgerClick }: { onBurgerClick?: () => void }) {
+  const { t } = useTranslation();
   const [userName, setUserName] = useState<string | null>(
     typeof window !== 'undefined' ? localStorage.getItem('userName') : null
   );
@@ -74,7 +76,7 @@ export default function HeaderBar({ onBurgerClick }: { onBurgerClick?: () => voi
              <div className="relative">
                 <input
                   type="text"
-                  placeholder="Поиск фильмов и сериалов..."
+                  placeholder={t.search.placeholder}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full py-2 pl-10 pr-4 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
@@ -95,7 +97,7 @@ export default function HeaderBar({ onBurgerClick }: { onBurgerClick?: () => voi
               </Link>
             ) : (
               <Link href="/login" className="text-sm font-medium p-2 rounded-md bg-red-600 hover:bg-red-700 text-white transition-colors">
-                Вход
+                {t.nav.login}
               </Link>
             )}
             <button onClick={onBurgerClick} className="md:hidden p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600">
@@ -107,9 +109,9 @@ export default function HeaderBar({ onBurgerClick }: { onBurgerClick?: () => voi
         {/* Bottom bar */}
         <div className="hidden md:flex items-center justify-center h-12 border-t border-gray-200 dark:border-gray-800">
             <nav className="flex items-center space-x-8">
-                <NavLink href="/">Фильмы</NavLink>
-                <NavLink href="/categories">Категории</NavLink>
-                <NavLink href="/favorites">Избранное</NavLink>
+                <NavLink href="/">{t.nav.movies}</NavLink>
+                <NavLink href="/categories">{t.nav.categories || 'Категории'}</NavLink>
+                <NavLink href="/favorites">{t.nav.favorites}</NavLink>
             </nav>
         </div>
       </div>
