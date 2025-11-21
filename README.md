@@ -1,5 +1,8 @@
 # 🎬 Neo Movies
 
+## DEPRECATED! New repository: https://gitlab.com/foxixus/neomovies-web
+
+
 <div align="center">
   <img src="public/logo.png" alt="Neo Movies Logo" width="200"/>
   <p><strong>Современный онлайн-сервис с удобным интерфейсом</strong></p>
